@@ -1,0 +1,123 @@
+<!-- profile.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - StudyDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand">StudyDesk</div>
+      <div class="brand-sub">Assignments, study plans, and groups in one workspace</div>
+    </div>
+    <nav class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="modules.html">Modules</a>
+      <a href="assignments.html">Assignments</a>
+      <a href="planner.html">Study Planner</a>
+      <a href="groups.html">Groups</a>
+      <a href="profile.html">Profile</a>
+      <a class="nav-pill" href="login.html">Logout</a>
+    </nav>
+  </header>
+  <main class="container">
+    <section class="hero compact-hero">
+      <div>
+        <div class="eyebrow">Account settings</div>
+        <h1>Profile</h1>
+        <p>Keep your personal details, study preferences, and password up to date.</p>
+      </div>
+      <div class="stat-box">
+        <strong>J</strong>
+        <span>initial</span>
+      </div>
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="section-head">
+          <h2>Update details</h2>
+          <span class="tip" title="These fields are used in group matching and your profile display.">i</span>
+        </div>
+        <div class="helper-grid">
+          <div class="help-card"><strong>Name</strong><p>Shown in the app and in study groups.</p></div>
+          <div class="help-card"><strong>Email</strong><p>Used to sign in and recover your account if needed.</p></div>
+          <div class="help-card"><strong>Availability</strong><p>Used for matching joint sessions and open study groups.</p></div>
+        </div>
+        <form class="form-grid" onsubmit="event.preventDefault(); saveProfile();">
+          <label>Name
+            <input type="text" id="profileName" value="Tharusha Nethmina" required minlength="2" maxlength="80">
+          </label>
+          <label>Email
+            <input type="email" id="profileEmail" value="john.doe@example.com" required maxlength="120">
+          </label>
+          <label>Program
+            <input type="text" id="profileProgram" value="Computer Science" maxlength="120" placeholder="Degree or study track">
+          </label>
+          <label>Location preference
+            <input type="text" id="profileLocation" value="Library" maxlength="120" placeholder="Library / hostel / online">
+          </label>
+          <label>Availability
+            <input type="text" id="profileAvailability" value="Mon evening, Wed night" maxlength="255" placeholder="Mon evening, Wed night">
+          </label>
+          <label>Study goal
+            <textarea id="profileGoal" rows="4" maxlength="255" placeholder="What are you aiming for this term?">Aiming for an A in CS101</textarea>
+          </label>
+          <button type="submit">Save profile</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>Change password</h2>
+          <span class="tip" title="Use a password you have not reused elsewhere.">i</span>
+        </div>
+        <form class="form-grid" onsubmit="event.preventDefault(); changePassword();">
+          <label>Current password
+            <input type="password" id="currentPassword" required maxlength="128">
+          </label>
+          <label>New password
+            <input type="password" id="newPassword" required minlength="8" maxlength="128">
+          </label>
+          <label>Confirm password
+            <input type="password" id="confirmPassword" required minlength="8" maxlength="128">
+          </label>
+          <button type="submit">Update password</button>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    function saveProfile() {
+      let name = document.getElementById('profileName').value;
+      let email = document.getElementById('profileEmail').value;
+      alert(`Profile saved!\nName: ${name}\nEmail: ${email}`);
+    }
+
+    function changePassword() {
+      let current = document.getElementById('currentPassword').value;
+      let newPwd = document.getElementById('newPassword').value;
+      let confirm = document.getElementById('confirmPassword').value;
+      if(newPwd !== confirm) {
+        alert("New passwords do not match");
+        return;
+      }
+      if(newPwd.length < 8) {
+        alert("Password must be at least 8 characters");
+        return;
+      }
+      alert("Password updated successfully");
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+    }
+  </script>
+</body>
+</html>

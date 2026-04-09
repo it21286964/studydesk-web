@@ -1,0 +1,82 @@
+<!-- register.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - StudyDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand">StudyDesk</div>
+      <div class="brand-sub">Assignments, study plans, and groups in one workspace</div>
+    </div>
+    <nav class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="modules.html">Modules</a>
+      <a href="assignments.html">Assignments</a>
+      <a href="planner.html">Study Planner</a>
+      <a href="groups.html">Groups</a>
+      <a href="profile.html">Profile</a>
+      <a class="nav-pill" href="login.html">Logout</a>
+    </nav>
+  </header>
+  <main class="container">
+    <div class="auth-shell">
+      <section class="auth-card wide">
+        <div class="eyebrow">Create account</div>
+        <h1>Start your StudyDesk workspace</h1>
+        <p class="muted">Add your profile preferences now so planner and group matching feel personalized from the first exam.</p>
+        <div class="helper-grid">
+          <div class="help-card"><strong>Availability</strong><p>Write simple time blocks such as “Mon evening” or “Wed 2–5 pm.” This helps StudyDesk suggest better study groups.</p></div>
+          <div class="help-card"><strong>Location preference</strong><p>Use “library,” “hostel,” or “online” to bias matching toward students who study in similar places.</p></div>
+          <div class="help-card"><strong>Study goal</strong><p>A short goal such as “aiming for an A” or “need revision every week” can improve the group context shown to peers.</p></div>
+        </div>
+        <form class="form-grid two-col" onsubmit="event.preventDefault(); register();">
+          <label>Name
+            <input type="text" id="regName" required minlength="2" maxlength="80" placeholder="Your full name">
+          </label>
+          <label>Email
+            <input type="email" id="regEmail" required maxlength="120" placeholder="name@example.com">
+          </label>
+          <label>Password
+            <input type="password" id="regPassword" required minlength="8" maxlength="128" placeholder="Create a strong password">
+          </label>
+          <label>Program
+            <input type="text" id="regProgram" maxlength="120" placeholder="e.g. Computer Science">
+          </label>
+          <label>Location preference
+            <input type="text" id="regLocation" maxlength="120" placeholder="Library / hostel / online">
+          </label>
+          <label>Availability
+            <input type="text" id="regAvailability" maxlength="255" placeholder="Mon evening, Wed night">
+          </label>
+          <label>Study goal
+            <textarea id="regGoal" rows="3" maxlength="255" placeholder="What are you aiming for this term?"></textarea>
+          </label>
+          <button type="submit">Create account</button>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    function register() {
+      let name = document.getElementById('regName').value;
+      let email = document.getElementById('regEmail').value;
+      let password = document.getElementById('regPassword').value;
+      if(name && email && password) {
+        alert(`Account created for ${name}! Please log in.`);
+        window.location.href = 'login.html';
+      } else {
+        alert('Please fill in all required fields');
+      }
+    }
+  </script>
+</body>
+</html>

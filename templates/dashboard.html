@@ -1,0 +1,95 @@
+<!-- dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - StudyDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand">StudyDesk</div>
+      <div class="brand-sub">Assignments, study plans, and groups in one workspace</div>
+    </div>
+    <nav class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="modules.html">Modules</a>
+      <a href="assignments.html">Assignments</a>
+      <a href="planner.html">Study Planner</a>
+      <a href="groups.html">Groups</a>
+      <a href="profile.html">Profile</a>
+      <a class="nav-pill" href="login.html">Logout</a>
+    </nav>
+  </header>
+  <main class="container">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Academic workload cockpit</div>
+        <h1>Hello, Tharusha Nethmina.</h1>
+        <p>Track assignments, shape study plans, and keep group work synchronized.</p>
+      </div>
+      <div class="stat-stack">
+        <div class="stat-box"><strong>6</strong><span>modules</span></div>
+        <div class="stat-box"><strong>14</strong><span>tasks</span></div>
+        <div class="stat-box"><strong>3</strong><span>alerts</span></div>
+      </div>
+    </section>
+    <div class="grid-4 metrics">
+      <div class="mini-card metric"><span>Exams</span><strong>3</strong></div>
+      <div class="mini-card metric"><span>Plans</span><strong>2</strong></div>
+      <div class="mini-card metric"><span>Groups</span><strong>1</strong></div>
+      <div class="mini-card metric"><span>Active tasks</span><strong>5</strong></div>
+    </div>
+    <section class="card">
+      <div class="section-head"><h2>Modules</h2></div>
+      <ul class="list compact">
+        <li><strong>CS101</strong> - Programming Fundamentals <span class="subtle">(4 credits)</span></li>
+        <li><strong>ME201</strong> - Engineering Mechanics <span class="subtle">(3 credits)</span></li>
+        <li><strong>EE105</strong> - Electric Circuits <span class="subtle">(3 credits)</span></li>
+        <li><strong>MATH210</strong> - Calculus II <span class="subtle">(4 credits)</span></li>
+        <li><strong>PHYS150</strong> - Physics Laboratory <span class="subtle">(2 credits)</span></li>
+        <li><strong>ENGL101</strong> - Academic Writing <span class="subtle">(3 credits)</span></li>
+      </ul>
+    </section>
+    <div class="grid-2">
+      <section class="card">
+        <div class="section-head"><h2>Upcoming Exams</h2></div>
+        <div class="mini-card">
+          <strong>CS101 - Programming Fundamentals</strong>
+          <div>2026-06-01</div>
+          <div class="subtle">Final Exam</div>
+        </div>
+        <div class="mini-card">
+          <strong>ME201 - Engineering Mechanics</strong>
+          <div>2026-06-05</div>
+          <div class="subtle">Midterm Exam</div>
+        </div>
+        <div class="mini-card">
+          <strong>MATH210 - Calculus II</strong>
+          <div>2026-06-10</div>
+          <div class="subtle">Final Exam</div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="section-head"><h2>Recent Assignments</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Task</th><th>Type</th><th>Deadline</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Lab Report 01</td><td><span class="pill">Lab</span></td><td>2026-05-12</td><td>In Progress</td></tr>
+              <tr><td>Project Proposal</td><td><span class="pill">Project</span></td><td>2026-05-25</td><td>Not Started</td></tr>
+              <tr><td>Weekly Quiz 4</td><td><span class="pill">Quiz</span></td><td>2026-05-15</td><td>Completed</td></tr>
+              <tr><td>Circuit Analysis HW</td><td><span class="pill">Assignment</span></td><td>2026-05-18</td><td>In Progress</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
