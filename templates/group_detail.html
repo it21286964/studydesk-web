@@ -1,0 +1,199 @@
+<!-- group_detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Group Detail - StudyDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand">StudyDesk</div>
+      <div class="brand-sub">Assignments, study plans, and groups in one workspace</div>
+    </div>
+    <nav class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="modules.html">Modules</a>
+      <a href="assignments.html">Assignments</a>
+      <a href="planner.html">Study Planner</a>
+      <a href="groups.html">Groups</a>
+      <a href="profile.html">Profile</a>
+      <a class="nav-pill" href="login.html">Logout</a>
+    </nav>
+  </header>
+  <main class="container">
+    <section class="hero compact-hero">
+      <div>
+        <div class="eyebrow">Study circle</div>
+        <h1 id="groupName">CS101 Study Circle</h1>
+        <p id="groupMeta">CS101 · Exam: 2026-06-01 · Location preference: Library</p>
+      </div>
+      <div class="stat-box">
+        <strong id="memberCount">2</strong>
+        <span>members</span>
+      </div>
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="section-head">
+          <h2>Members</h2>
+          <span class="tip" title="Each member brings their own profile preferences and study goals.">i</span>
+        </div>
+        <ul class="list compact" id="membersList"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>Shared plans</h2>
+          <span class="tip" title="Shared plans are visible to all members in this group.">i</span>
+        </div>
+        <div id="sharedPlansList"></div>
+      </section>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="section-head">
+          <h2>Upload resource</h2>
+          <span class="tip" title="Upload lecture notes, slides, or summary documents for the whole group.">i</span>
+        </div>
+        <form class="form-grid" onsubmit="event.preventDefault(); uploadResource();">
+          <label>File
+            <input type="file" id="resourceFile" accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.png,.jpg,.jpeg">
+          </label>
+          <button type="submit">Upload</button>
+        </form>
+        <div class="stack" id="resourcesList"></div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>Schedule joint session</h2>
+          <span class="tip" title="Each joint session is inserted into shared plans as a blocked slot.">i</span>
+        </div>
+        <form class="form-grid" onsubmit="event.preventDefault(); addSession();">
+          <label>Date
+            <input type="date" id="sessionDate" required>
+          </label>
+          <label>Start time
+            <input type="time" id="startTime" required>
+          </label>
+          <label>End time
+            <input type="time" id="endTime" required>
+          </label>
+          <label>Notes
+            <textarea id="sessionNotes" rows="3" maxlength="500" placeholder="Meeting agenda, venue, focus topics..."></textarea>
+          </label>
+          <button type="submit">Create session</button>
+        </form>
+        <div class="stack" id="sessionsList"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // Get group ID from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const groupId = parseInt(urlParams.get('id')) || 1;
+
+    let groups = {
+      1: {
+        id:1, group_name:"CS101 Study Circle", module_code:"CS101", exam_date:"2026-06-01", location_pref:"Library",
+        members:[{name:"Tharusha Nethmina", study_goal:"Aiming for A", location_pref:"Library"}, {name:"Jane Smith", study_goal:"Master coding", location_pref:"Library"}],
+        shared_plans:[{plan_name:"Final Exam Review", is_shared:true}],
+        resources:[{filename:"lecture_notes.pdf"}],
+        sessions:[{session_date:"2026-05-20", start_time:"14:00", end_time:"16:00", notes:"Review binary trees"}]
+      },
+      3: {
+        id:3, group_name:"ME201 Mechanics Team", module_code:"ME201", exam_date:"2026-06-05", location_pref:"Hostel",
+        members:[{name:"Tharusha Nethmina", study_goal:"Pass with B+", location_pref:"Hostel"}, {name:"Bob Wilson", study_goal:"Understand dynamics", location_pref:"Hostel"}],
+        shared_plans:[],
+        resources:[],
+        sessions:[]
+      }
+    };
+
+    let group = groups[groupId] || groups[1];
+
+    function renderGroup() {
+      document.getElementById('groupName').innerText = group.group_name;
+      document.getElementById('groupMeta').innerHTML = `${group.module_code} · Exam: ${group.exam_date} · Location preference: ${group.location_pref || 'Not set'}`;
+      document.getElementById('memberCount').innerText = group.members.length;
+
+      let membersHtml = '';
+      group.members.forEach(m => {
+        membersHtml += `<li><strong>${m.name}</strong><div class="subtle">${m.study_goal || 'No goal set'}${m.location_pref ? ' · ' + m.location_pref : ''}</div></li>`;
+      });
+      document.getElementById('membersList').innerHTML = membersHtml;
+
+      let plansHtml = '';
+      if(group.shared_plans && group.shared_plans.length) {
+        group.shared_plans.forEach(p => {
+          plansHtml += `<li><strong>${p.plan_name}</strong> <span class="subtle">Shared</span></li>`;
+        });
+        plansHtml = `<ul class="list compact">${plansHtml}</ul>`;
+      } else {
+        plansHtml = '<p class="muted">No shared plans yet.</p>';
+      }
+      document.getElementById('sharedPlansList').innerHTML = plansHtml;
+
+      let resourcesHtml = '';
+      if(group.resources && group.resources.length) {
+        group.resources.forEach(r => {
+          resourcesHtml += `<div class="mini-card"><a href="#">${r.filename}</a><div class="subtle">Uploaded by member</div></div>`;
+        });
+      } else {
+        resourcesHtml = '<p class="muted">No resources uploaded yet.</p>';
+      }
+      document.getElementById('resourcesList').innerHTML = resourcesHtml;
+
+      let sessionsHtml = '';
+      if(group.sessions && group.sessions.length) {
+        group.sessions.forEach(s => {
+          sessionsHtml += `<div class="mini-card"><strong>${s.session_date}</strong><div>${s.start_time} – ${s.end_time}</div><div class="subtle">${s.notes}</div></div>`;
+        });
+      } else {
+        sessionsHtml = '<p class="muted">No sessions scheduled yet.</p>';
+      }
+      document.getElementById('sessionsList').innerHTML = sessionsHtml;
+    }
+
+    function uploadResource() {
+      let fileInput = document.getElementById('resourceFile');
+      if(fileInput.files.length > 0) {
+        let filename = fileInput.files[0].name;
+        if(!group.resources) group.resources = [];
+        group.resources.push({filename: filename});
+        renderGroup();
+        alert(`Uploaded ${filename}`);
+        fileInput.value = '';
+      }
+    }
+
+    function addSession() {
+      let sessionDate = document.getElementById('sessionDate').value;
+      let startTime = document.getElementById('startTime').value;
+      let endTime = document.getElementById('endTime').value;
+      let notes = document.getElementById('sessionNotes').value;
+      if(sessionDate && startTime && endTime) {
+        if(!group.sessions) group.sessions = [];
+        group.sessions.push({session_date: sessionDate, start_time: startTime, end_time: endTime, notes: notes || ''});
+        renderGroup();
+        document.getElementById('sessionDate').value = '';
+        document.getElementById('startTime').value = '';
+        document.getElementById('endTime').value = '';
+        document.getElementById('sessionNotes').value = '';
+        alert('Session scheduled');
+      }
+    }
+
+    renderGroup();
+  </script>
+</body>
+</html>
