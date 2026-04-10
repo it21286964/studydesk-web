@@ -1,0 +1,109 @@
+<!-- groups.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Groups - StudyDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand">StudyDesk</div>
+      <div class="brand-sub">Assignments, study plans, and groups in one workspace</div>
+    </div>
+    <nav class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="modules.html">Modules</a>
+      <a href="assignments.html">Assignments</a>
+      <a href="planner.html">Study Planner</a>
+      <a href="groups.html">Groups</a>
+      <a href="profile.html">Profile</a>
+      <a class="nav-pill" href="login.html">Logout</a>
+    </nav>
+  </header>
+  <main class="container">
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Peer collaboration</div>
+          <h1>Study Group Management</h1>
+        </div>
+        <span class="tip" title="Groups are matched by module code and exam date, then refined by your availability and location preference.">i</span>
+      </div>
+      <p class="muted">When a matching exam is created in Assignments, a study circle is prepared automatically.</p>
+      <div class="row">
+        <button class="button-link" onclick="alert('Matching would scan your exams and join compatible groups')">Auto-match my exams</button>
+        <a class="button-link secondary" href="planner.html">Open planner</a>
+      </div>
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="section-head">
+          <h2>My groups</h2>
+          <span class="tip" title="These are the groups you already belong to.">i</span>
+        </div>
+        <div id="myGroupsList" class="stack"></div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>Open groups</h2>
+          <span class="tip" title="Joining an open group links you to shared plans, resources, and sessions.">i</span>
+        </div>
+        <div id="openGroupsList" class="stack"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    let groups = [
+      {id:1, group_name:"CS101 Study Circle", module_code:"CS101", exam_date:"2026-06-01", location_pref:"Library", members:["Tharusha Nethmina", "Jane Smith"], is_member:true},
+      {id:2, group_name:"MATH210 Calculus Group", module_code:"MATH210", exam_date:"2026-06-10", location_pref:"Online", members:["Alice Brown"], is_member:false},
+      {id:3, group_name:"ME201 Mechanics Team", module_code:"ME201", exam_date:"2026-06-05", location_pref:"Hostel", members:["Bob Wilson"], is_member:true}
+    ];
+
+    function renderGroups() {
+      let myGroups = groups.filter(g => g.is_member);
+      let openGroups = groups.filter(g => !g.is_member);
+
+      let myHtml = '';
+      myGroups.forEach(g => {
+        myHtml += `<div class="mini-card group-card">
+          <strong>${g.group_name}</strong>
+          <p class="subtle">${g.module_code} | ${g.exam_date}</p>
+          <a href="group_detail.html?id=${g.id}">Open group</a>
+        </div>`;
+      });
+      document.getElementById('myGroupsList').innerHTML = myHtml || '<p class="muted">You are not in any group yet.</p>';
+
+      let openHtml = '';
+      openGroups.forEach(g => {
+        openHtml += `<div class="mini-card group-card">
+          <strong>${g.group_name}</strong>
+          <p class="subtle">${g.module_code} | ${g.exam_date}</p>
+          <button onclick="joinGroup(${g.id})">Join</button>
+        </div>`;
+      });
+      document.getElementById('openGroupsList').innerHTML = openHtml || '<p class="muted">No groups available.</p>';
+    }
+
+    function joinGroup(groupId) {
+      let group = groups.find(g => g.id === groupId);
+      if(group) {
+        group.is_member = true;
+        group.members.push("Tharusha Nethmina");
+        renderGroups();
+        alert(`You joined ${group.group_name}`);
+      }
+    }
+
+    renderGroups();
+  </script>
+</body>
+</html>
