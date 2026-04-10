@@ -1,0 +1,85 @@
+<!-- modules.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modules - StudyDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand">StudyDesk</div>
+      <div class="brand-sub">Assignments, study plans, and groups in one workspace</div>
+    </div>
+    <nav class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="modules.html">Modules</a>
+      <a href="assignments.html">Assignments</a>
+      <a href="planner.html">Study Planner</a>
+      <a href="groups.html">Groups</a>
+      <a href="profile.html">Profile</a>
+      <a class="nav-pill" href="login.html">Logout</a>
+    </nav>
+  </header>
+  <main class="container">
+    <section class="card">
+      <div class="section-head">
+        <div><div class="eyebrow">Module registry</div><h1>Modules</h1></div>
+        <span class="tip" title="Every assignment, topic, exam, and group starts with a module.">i</span>
+      </div>
+      <div class="helper-grid"><div class="help-card"><strong>Credits</strong><p>Use the credit count from your syllabus. Higher-credit modules can be given more attention in planning.</p></div></div>
+      <form class="form-grid three-col" onsubmit="event.preventDefault(); addModule();">
+        <label>Code<input type="text" id="moduleCode" required placeholder="e.g. CS101"></label>
+        <label>Name<input type="text" id="moduleName" required placeholder="e.g. Introduction to Computing"></label>
+        <label>Credits<input type="number" id="moduleCredits" min="0" max="60" value="0"></label>
+        <button type="submit">Add module</button>
+      </form>
+    </section>
+    <div class="toolbar"><input type="search" class="searchbox" placeholder="Filter modules…" id="moduleSearch" onkeyup="filterModules()"></div>
+    <div class="grid" id="modulesGrid"></div>
+  </main>
+  <script>
+    let modules = [
+      {id:1, code:"CS101", name:"Programming Fundamentals", credits:4},
+      {id:2, code:"ME201", name:"Engineering Mechanics", credits:3},
+      {id:3, code:"EE105", name:"Electric Circuits", credits:3},
+      {id:4, code:"MATH210", name:"Calculus II", credits:4},
+      {id:5, code:"PHYS150", name:"Physics Laboratory", credits:2},
+      {id:6, code:"ENGL101", name:"Academic Writing", credits:3}
+    ];
+    let nextModuleId = 7;
+
+    function renderModules() {
+      let search = document.getElementById('moduleSearch').value.toLowerCase();
+      let filtered = modules.filter(m => m.code.toLowerCase().includes(search) || m.name.toLowerCase().includes(search));
+      let html = '';
+      filtered.forEach(m => {
+        html += `<div class="card module-card"><div class="section-head"><h3>${m.code}</h3><span class="pill">${m.credits} cr</span></div><p>${m.name}</p><button class="danger" onclick="deleteModule(${m.id})">Delete</button></div>`;
+      });
+      document.getElementById('modulesGrid').innerHTML = html;
+    }
+
+    function addModule() {
+      let code = document.getElementById('moduleCode').value;
+      let name = document.getElementById('moduleName').value;
+      let credits = parseInt(document.getElementById('moduleCredits').value);
+      if(code && name) {
+        modules.push({id:nextModuleId++, code:code, name:name, credits:credits});
+        renderModules();
+        document.getElementById('moduleCode').value = '';
+        document.getElementById('moduleName').value = '';
+        document.getElementById('moduleCredits').value = '0';
+      }
+    }
+
+    function deleteModule(id) { modules = modules.filter(m => m.id !== id); renderModules(); }
+    function filterModules() { renderModules(); }
+    renderModules();
+  </script>
+</body>
+</html>
