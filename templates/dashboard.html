@@ -1,95 +1,128 @@
-<!-- dashboard.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - StudyDesk</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <header class="topbar">
-    <div class="brand-wrap">
-      <div class="brand">StudyDesk</div>
-      <div class="brand-sub">Assignments, study plans, and groups in one workspace</div>
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <div class="eyebrow">Academic workload cockpit</div>
+    <h1>Hello, {{ current_user.name }}.</h1>
+    <p>Track assignments, shape study plans, and keep group work synchronized without losing momentum.</p>
+    <div class="hero-actions">
+      <a class="button-link" href="{{ url_for('assignments') }}">Add task</a>
+      <a class="button-link secondary" href="{{ url_for('planner') }}">Build plan</a>
+      <a class="button-link secondary" href="{{ url_for('groups') }}">Check groups</a>
     </div>
-    <nav class="nav-links">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="modules.html">Modules</a>
-      <a href="assignments.html">Assignments</a>
-      <a href="planner.html">Study Planner</a>
-      <a href="groups.html">Groups</a>
-      <a href="profile.html">Profile</a>
-      <a class="nav-pill" href="login.html">Logout</a>
-    </nav>
-  </header>
-  <main class="container">
-    <section class="hero">
-      <div>
-        <div class="eyebrow">Academic workload cockpit</div>
-        <h1>Hello, Tharusha Nethmina.</h1>
-        <p>Track assignments, shape study plans, and keep group work synchronized.</p>
-      </div>
-      <div class="stat-stack">
-        <div class="stat-box"><strong>6</strong><span>modules</span></div>
-        <div class="stat-box"><strong>14</strong><span>tasks</span></div>
-        <div class="stat-box"><strong>3</strong><span>alerts</span></div>
-      </div>
-    </section>
-    <div class="grid-4 metrics">
-      <div class="mini-card metric"><span>Exams</span><strong>3</strong></div>
-      <div class="mini-card metric"><span>Plans</span><strong>2</strong></div>
-      <div class="mini-card metric"><span>Groups</span><strong>1</strong></div>
-      <div class="mini-card metric"><span>Active tasks</span><strong>5</strong></div>
+  </div>
+  <div class="stat-stack">
+    <div class="stat-box">
+      <strong>{{ stats.modules }}</strong><span>modules</span>
     </div>
-    <section class="card">
-      <div class="section-head"><h2>Modules</h2></div>
+    <div class="stat-box">
+      <strong>{{ stats.assignments }}</strong><span>tasks</span>
+    </div>
+    <div class="stat-box">
+      <strong>{{ stats.unread }}</strong><span>new alerts</span>
+    </div>
+  </div>
+</section>
+
+<div class="grid-4 metrics">
+  <div class="mini-card metric"><span>Exams</span><strong>{{ stats.exams }}</strong></div>
+  <div class="mini-card metric"><span>Plans</span><strong>{{ stats.plans }}</strong></div>
+  <div class="mini-card metric"><span>Groups</span><strong>{{ stats.groups }}</strong></div>
+  <div class="mini-card metric"><span>Active tasks</span><strong>{{ stats.active_tasks }}</strong></div>
+</div>
+
+<div class="grid-3">
+  <section class="card">
+    <div class="section-head">
+      <h2>Modules</h2>
+      <span class="tip" title="Modules are the parent containers for assignments, topics, and groups.">i</span>
+    </div>
+    {% if modules %}
       <ul class="list compact">
-        <li><strong>CS101</strong> - Programming Fundamentals <span class="subtle">(4 credits)</span></li>
-        <li><strong>ME201</strong> - Engineering Mechanics <span class="subtle">(3 credits)</span></li>
-        <li><strong>EE105</strong> - Electric Circuits <span class="subtle">(3 credits)</span></li>
-        <li><strong>MATH210</strong> - Calculus II <span class="subtle">(4 credits)</span></li>
-        <li><strong>PHYS150</strong> - Physics Laboratory <span class="subtle">(2 credits)</span></li>
-        <li><strong>ENGL101</strong> - Academic Writing <span class="subtle">(3 credits)</span></li>
+        {% for m in modules %}
+          <li><strong>{{ m.code }}</strong> - {{ m.name }} <span class="subtle">({{ m.credits }} credits)</span></li>
+        {% endfor %}
       </ul>
-    </section>
-    <div class="grid-2">
-      <section class="card">
-        <div class="section-head"><h2>Upcoming Exams</h2></div>
-        <div class="mini-card">
-          <strong>CS101 - Programming Fundamentals</strong>
-          <div>2026-06-01</div>
-          <div class="subtle">Final Exam</div>
-        </div>
-        <div class="mini-card">
-          <strong>ME201 - Engineering Mechanics</strong>
-          <div>2026-06-05</div>
-          <div class="subtle">Midterm Exam</div>
-        </div>
-        <div class="mini-card">
-          <strong>MATH210 - Calculus II</strong>
-          <div>2026-06-10</div>
-          <div class="subtle">Final Exam</div>
-        </div>
-      </section>
-      <section class="card">
-        <div class="section-head"><h2>Recent Assignments</h2></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Task</th><th>Type</th><th>Deadline</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td>Lab Report 01</td><td><span class="pill">Lab</span></td><td>2026-05-12</td><td>In Progress</td></tr>
-              <tr><td>Project Proposal</td><td><span class="pill">Project</span></td><td>2026-05-25</td><td>Not Started</td></tr>
-              <tr><td>Weekly Quiz 4</td><td><span class="pill">Quiz</span></td><td>2026-05-15</td><td>Completed</td></tr>
-              <tr><td>Circuit Analysis HW</td><td><span class="pill">Assignment</span></td><td>2026-05-18</td><td>In Progress</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+    {% else %}
+      <p class="muted">Add a module to start tracking coursework.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <h2>Upcoming exams</h2>
+      <span class="tip" title="Exam dates are automatically turned into study-plan anchors.">i</span>
     </div>
-  </main>
-</body>
-</html>
+    {% if exams %}
+      <div class="stack">
+        {% for e in exams %}
+          <div class="mini-card">
+            <strong>{{ e.module.code }}</strong>
+            <div>{{ e.exam_date|dt }}</div>
+            <div class="subtle">{{ e.module.name }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No exam anchors yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <h2>Notifications</h2>
+      <span class="tip" title="Tap a notification to mark it as read. Use the clear-all button for a clean inbox.">i</span>
+    </div>
+    <div class="row between">
+      <span class="pill">{{ stats.unread }} unread</span>
+      <button type="button" class="ghost-button" data-mark-all-read title="Mark every notification as read">Mark all read</button>
+    </div>
+    {% if notifications %}
+      <ul class="list compact notif-list">
+        {% for n in notifications %}
+          <li class="notif-item {{ 'unread' if not n.is_read else 'read' }}" data-notification-id="{{ n.id }}" title="Click to mark as read">{{ n.message }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No reminders right now.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <div class="section-head">
+    <h2>Assignments sorted by urgency</h2>
+    <span class="tip" title="The dashboard sorts by deadline first, then priority and credit weight.">i</span>
+  </div>
+  <div class="toolbar">
+    <input type="search" class="searchbox" placeholder="Filter tasks…" data-live-filter=".assignment-row" title="Search by title, type, or status">
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Task</th><th>Type</th><th>Deadline</th><th>Weight</th><th>Priority</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for a in assignments %}
+        <tr class="assignment-row">
+          <td>
+            <strong>{{ a.title }}</strong>
+            <div class="subtle">{{ a.module.code }}</div>
+          </td>
+          <td><span class="pill">{{ a.type }}</span></td>
+          <td>{{ a.deadline|dt }}</td>
+          <td>{{ a.credit_weight }}</td>
+          <td>{{ a.priority_level }}</td>
+          <td><button class="status-btn" data-id="{{ a.id }}" title="Tap to cycle: Not Started → In Progress → Submitted → Completed">{{ a.status }}</button></td>
+          <td>
+            <form method="post" action="{{ url_for('delete_assignment', assignment_id=a.id) }}">
+              <button class="danger" type="submit" title="Delete this task">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
