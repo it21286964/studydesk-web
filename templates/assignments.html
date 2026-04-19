@@ -1,150 +1,87 @@
-<!-- assignments.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Assignments & Tasks - StudyDesk</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <header class="topbar">
-    <div class="brand-wrap">
-      <div class="brand">StudyDesk</div>
-      <div class="brand-sub">Assignments, study plans, and groups in one workspace</div>
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Workload tracker</div>
+      <h1>Assignments & Tasks</h1>
     </div>
-    <nav class="nav-links">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="modules.html">Modules</a>
-      <a href="assignments.html">Assignments</a>
-      <a href="planner.html">Study Planner</a>
-      <a href="groups.html">Groups</a>
-      <a href="profile.html">Profile</a>
-      <a class="nav-pill" href="login.html">Logout</a>
-    </nav>
-  </header>
-  <main class="container">
-    <section class="card">
-      <div class="section-head">
-        <div>
-          <div class="eyebrow">Workload tracker</div>
-          <h1>Assignments & Tasks</h1>
-        </div>
-        <span class="tip" title="Tap a status button to quickly move a task through the workflow.">i</span>
-      </div>
-      <p class="muted">Keep all graded work in one place. Exams added here also become study-plan anchors in Study planner.</p>
-      <div class="helper-grid">
-        <div class="help-card"><strong>Priority level</strong><p>1 = low urgency, 5 = medium, 10 = highest urgency. Bigger numbers push the task nearer the top when deadlines are similar.</p></div>
-        <div class="help-card"><strong>Credit weight</strong><p>Use this to reflect how much the task counts toward the module. Higher weights help the dashboard favor it when several items are close together.</p></div>
-      </div>
-      <form class="form-grid three-col" onsubmit="event.preventDefault(); addTask();">
-        <label>Module
-          <select id="moduleSelect" required>
-            <option value="1">CS101 - Programming Fundamentals</option>
-            <option value="2">ME201 - Engineering Mechanics</option>
-            <option value="3">EE105 - Electric Circuits</option>
-            <option value="4">MATH210 - Calculus II</option>
-          </select>
-        </label>
-        <label>Title
-          <input type="text" id="taskTitle" required minlength="3" maxlength="200" placeholder="Weekly quiz, lab report, final project…">
-        </label>
-        <label>Type
-          <select id="taskType" required>
-            <option>assignment</option><option>lab</option><option>quiz</option><option>exam</option><option>project</option>
-          </select>
-        </label>
-        <label>Deadline
-          <input type="datetime-local" id="taskDeadline" required>
-        </label>
-        <label>Credit weight
-          <input type="number" id="taskWeight" min="0" max="100" value="0">
-        </label>
-        <label>Priority level
-          <input type="number" id="taskPriority" min="1" max="10" value="1">
-          <span class="field-help">1 = low urgency, 5 = medium, 10 = highest priority.</span>
-        </label>
-        <button type="submit">Add task</button>
-      </form>
-    </section>
-    <div class="toolbar">
-      <input type="search" class="searchbox" placeholder="Filter tasks…" id="taskSearch" onkeyup="filterTasks()">
-    </div>
-    <section class="card">
-      <div class="section-head"><h2>Tracked work</h2><span class="tip" title="Assigning an exam here creates the matching study-session anchor automatically.">i</span></div>
-      <div class="table-wrap">
-        <table id="tasksTable">
-          <thead><tr><th>Task</th><th>Type</th><th>Deadline</th><th>Weight</th><th>Priority</th><th>Status</th><th></th></tr></thead>
-          <tbody id="tasksList"></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-  <script>
-    let tasks = [
-      {id:1, title:"Programming Assignment 1", module:"CS101 - Programming Fundamentals", type:"assignment", deadline:"2026-05-20T23:59", weight:15, priority:8, status:"In Progress"},
-      {id:2, title:"Lab Report 02", module:"PHYS150 - Physics Lab", type:"lab", deadline:"2026-05-18T17:00", weight:10, priority:6, status:"Not Started"},
-      {id:3, title:"Midterm Exam", module:"MATH210 - Calculus II", type:"exam", deadline:"2026-05-25T09:00", weight:30, priority:10, status:"Not Started"},
-      {id:4, title:"Weekly Quiz 3", module:"CS101 - Programming Fundamentals", type:"quiz", deadline:"2026-05-16T23:59", weight:5, priority:5, status:"Completed"},
-      {id:5, title:"Project Milestone 1", module:"ME201 - Engineering Mechanics", type:"project", deadline:"2026-05-22T23:59", weight:20, priority:9, status:"In Progress"}
-    ];
-    let nextId = 6;
+    <span class="tip" title="Tap a status button to quickly move a task through the workflow.">i</span>
+  </div>
+  <p class="muted">Keep all graded work in one place. Exams added here also become study-plan anchors in Study planner.</p>
+  <div class="helper-grid">
+    <div class="help-card"><strong>Priority level</strong><p>1 = low urgency, 5 = medium, 10 = highest urgency. Bigger numbers push the task nearer the top when deadlines are similar.</p></div>
+    <div class="help-card"><strong>Credit weight</strong><p>Use this to reflect how much the task counts toward the module. Higher weights help the dashboard favor it when several items are close together.</p></div>
+  </div>
+  <form method="post" class="form-grid three-col">
+    <label>Module
+      <select name="module_id" required title="Choose the module this task belongs to">
+        {% for m in modules %}
+          <option value="{{ m.id }}">{{ m.code }} - {{ m.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Title
+      <input type="text" name="title" required minlength="3" maxlength="200" placeholder="Weekly quiz, lab report, final project…">
+    </label>
+    <label>Type
+      <select name="type" required title="Task category">
+        <option>assignment</option>
+        <option>lab</option>
+        <option>quiz</option>
+        <option>exam</option>
+        <option>project</option>
+      </select>
+    </label>
+    <label>Deadline
+      <input type="datetime-local" name="deadline" required title="Pick the exact due date and time">
+    </label>
+    <label>Credit weight
+      <input type="number" name="credit_weight" min="0" max="100" value="0" title="Higher weights make the task more important when tasks feel similar">
+    </label>
+    <label>Priority level
+      <input type="number" name="priority_level" min="1" max="10" value="1" title="1 means low urgency; 10 means top priority">
+      <span class="field-help">1 = low urgency, 5 = medium, 10 = highest priority.</span>
+    </label>
+    <button type="submit">Add task</button>
+  </form>
+</section>
 
-    function renderTasks() {
-      let searchTerm = document.getElementById('taskSearch').value.toLowerCase();
-      let filtered = tasks.filter(t => t.title.toLowerCase().includes(searchTerm) || t.module.toLowerCase().includes(searchTerm) || t.type.includes(searchTerm));
-      let html = '';
-      filtered.forEach(t => {
-        html += `<tr class="assignment-item">
-          <td><strong>${t.title}</strong><div class="subtle">${t.module}</div></td>
-          <td><span class="pill">${t.type}</span></td>
-          <td>${t.deadline.replace('T', ' ')}</td>
-          <td>${t.weight}</td>
-          <td>${t.priority}</td>
-          <td><button class="status-btn" onclick="cycleStatus(${t.id})">${t.status}</button></td>
-          <td><button class="danger" onclick="deleteTask(${t.id})">Delete</button></td>
-        </tr>`;
-      });
-      document.getElementById('tasksList').innerHTML = html;
-    }
+<div class="toolbar">
+  <input type="search" class="searchbox" placeholder="Filter tasks…" data-live-filter=".assignment-item" title="Search task title, module, type, or status">
+</div>
 
-    function addTask() {
-      let moduleSelect = document.getElementById('moduleSelect');
-      let newTask = {
-        id: nextId++,
-        title: document.getElementById('taskTitle').value,
-        module: moduleSelect.options[moduleSelect.selectedIndex].text,
-        type: document.getElementById('taskType').value,
-        deadline: document.getElementById('taskDeadline').value,
-        weight: parseInt(document.getElementById('taskWeight').value),
-        priority: parseInt(document.getElementById('taskPriority').value),
-        status: "Not Started"
-      };
-      if(newTask.title && newTask.deadline) {
-        tasks.push(newTask);
-        renderTasks();
-        document.getElementById('taskTitle').value = '';
-        document.getElementById('taskDeadline').value = '';
-        document.getElementById('taskWeight').value = '0';
-        document.getElementById('taskPriority').value = '1';
-      }
-    }
-
-    function deleteTask(id) { tasks = tasks.filter(t => t.id !== id); renderTasks(); }
-    
-    function cycleStatus(id) {
-      let statuses = ["Not Started", "In Progress", "Completed"];
-      let task = tasks.find(t => t.id === id);
-      let idx = statuses.indexOf(task.status);
-      task.status = statuses[(idx + 1) % statuses.length];
-      renderTasks();
-    }
-    
-    function filterTasks() { renderTasks(); }
-    renderTasks();
-  </script>
-</body>
-</html>
+<section class="card">
+  <div class="section-head">
+    <h2>Tracked work</h2>
+    <span class="tip" title="Assigning an exam here creates the matching study-session anchor automatically.">i</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Task</th><th>Type</th><th>Deadline</th><th>Weight</th><th>Priority</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for a in assignments %}
+        <tr class="assignment-item">
+          <td>
+            <strong>{{ a.title }}</strong>
+            <div class="subtle">{{ a.module.code }} - {{ a.module.name }}</div>
+          </td>
+          <td><span class="pill">{{ a.type }}</span></td>
+          <td>{{ a.deadline|dt }}</td>
+          <td>{{ a.credit_weight }}</td>
+          <td>{{ a.priority_level }}</td>
+          <td><button class="status-btn" data-id="{{ a.id }}" title="Cycle status with one tap">{{ a.status }}</button></td>
+          <td>
+            <form method="post" action="{{ url_for('delete_assignment', assignment_id=a.id) }}">
+              <button class="danger" type="submit" title="Delete this record">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
