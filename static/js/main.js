@@ -6,6 +6,8 @@ document.addEventListener("click", async (e) => {
     if (res.ok) {
       const data = await res.json();
       statusBtn.textContent = data.status;
+      statusBtn.classList.remove("status-not-started", "status-in-progress", "status-submitted", "status-completed");
+      statusBtn.classList.add(data.class || "status-not-started");
     }
     return;
   }
@@ -17,6 +19,8 @@ document.addEventListener("click", async (e) => {
     if (res.ok) {
       const data = await res.json();
       mini.textContent = data.completed ? "Done" : "Open";
+      mini.classList.toggle("status-completed", data.completed);
+      mini.classList.toggle("status-not-started", !data.completed);
     }
     return;
   }
@@ -42,21 +46,56 @@ document.addEventListener("click", async (e) => {
 
 document.addEventListener("input", (e) => {
   const input = e.target.closest("[data-live-filter]");
-  if (!input) return;
-  const selector = input.dataset.liveFilter;
-  const query = input.value.trim().toLowerCase();
-  document.querySelectorAll(selector).forEach((row) => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(query) ? "" : "none";
-  });
+  if (input) {
+    const selector = input.dataset.liveFilter;
+    const query = input.value.trim().toLowerCase();
+    document.querySelectorAll(selector).forEach((row) => {
+      const text = row.textContent.toLowerCase();
+      const typeFilter = document.querySelector("[data-live-filter-by]");
+      let typeOk = true;
+      if (typeFilter && typeFilter.value) {
+        const field = typeFilter.dataset.liveFilterField || "type";
+        typeOk = (row.dataset[field] || "").toLowerCase() === typeFilter.value.toLowerCase();
+      }
+      row.style.display = text.includes(query) && typeOk ? "" : "none";
+    });
+    return;
+  }
+
+  const typeFilter = e.target.closest("[data-live-filter-by]");
+  if (typeFilter) {
+    const selector = typeFilter.dataset.liveFilterBy;
+    const queryInput = document.querySelector("[data-live-filter]");
+    const query = queryInput ? queryInput.value.trim().toLowerCase() : "";
+    document.querySelectorAll(selector).forEach((row) => {
+      const text = row.textContent.toLowerCase();
+      const field = typeFilter.dataset.liveFilterField || "type";
+      const typeOk = !typeFilter.value || (row.dataset[field] || "").toLowerCase() === typeFilter.value.toLowerCase();
+      row.style.display = text.includes(query) && typeOk ? "" : "none";
+    });
+  }
 });
+
 document.addEventListener("DOMContentLoaded", () => {
-  const futureDates = document.querySelectorAll("[data-future-date]");
   const today = new Date();
   const isoToday = today.toISOString().slice(0, 10);
-  futureDates.forEach((input) => {
+  document.querySelectorAll(".future-date, [data-future-date]").forEach((input) => {
     if (!input.min) input.min = isoToday;
   });
+
+  const taskType = document.querySelector("#task-type");
+  const examExtra = document.querySelector("#exam-extra");
+  const syncExamVisibility = () => {
+    if (!taskType || !examExtra) return;
+    examExtra.classList.toggle("show", taskType.value === "exam");
+    examExtra.querySelectorAll("input, select").forEach((el) => {
+      el.required = taskType.value === "exam";
+    });
+  };
+  if (taskType && examExtra) {
+    taskType.addEventListener("change", syncExamVisibility);
+    syncExamVisibility();
+  }
 
   const newPassword = document.querySelector('input[name="new_password"]');
   const confirmPassword = document.querySelector('input[name="confirm_password"]');
@@ -86,4 +125,3 @@ document.addEventListener("DOMContentLoaded", () => {
     endTime.addEventListener("input", syncSessionTime);
   }
 });
-
