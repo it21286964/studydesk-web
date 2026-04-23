@@ -494,3 +494,176 @@ def assignment_cycle(assignment_id):
     assignment.status = cycle_status(assignment.status)
     db.session.commit()
     return jsonify({"status": assignment.status, "class": status_class(assignment.status)})
+
+#Damitu
+@app.route("/planner", methods=["GET", "POST"])
+@login_required
+def planner():
+    modules_list = Module.query.filter_by(user_id=current_user.id).all()
+    if request.method == "POST":
+        if not modules_list:
+            flash("Add a module first.")
+            return redirect(url_for("planner"))
+        try:
+            module_id = int(request.form.get("module_id", 0))
+            module = require_ownership(module_id)
+        except (TypeError, ValueError):
+            flash("Choose a valid module.")
+            return redirect(url_for("planner"))
+
+        title = clean_text(request.form.get("title"))
+        if len(title) < 2 or len(title) > 200:
+            flash("Topic title must be between 2 and 200 characters.")
+            return redirect(url_for("planner"))
+
+        try:
+            preference = bound_int(request.form.get("preference_score", 5), "Preference", 0, 10)
+        except ValueError as exc:
+            flash(str(exc))
+            return redirect(url_for("planner"))
+
+        file_name = None
+        file_text = ""
+        uploaded = request.files.get("source_file")
+        if uploaded and uploaded.filename:
+            if not allowed_file(uploaded.filename):
+                flash("Unsupported file type.")
+                return redirect(url_for("planner"))
+            file_name, save_path = save_upload(uploaded)
+            file_text = extract_uploaded_text(save_path)
+
+        difficulty = estimate_difficulty_from_text(title, file_text)
+        priority_value = calculate_topic_priority(difficulty, preference)
+
+        db.session.add(StudyTopic(
+            module_id=module.id,
+            title=title,
+            difficulty_score=difficulty,
+            preference_score=preference,
+            priority_value=priority_value,
+            source_file=file_name,
+        ))
+        db.session.commit()
+        flash("Topic added.")
+        return redirect(url_for("planner"))
+
+    topics = (
+        StudyTopic.query.join(Module, StudyTopic.module_id == Module.id)
+        .filter(Module.user_id == current_user.id)
+        .order_by(StudyTopic.priority_value.desc(), StudyTopic.id.asc())
+        .all()
+    )
+    exams = (
+        ExamEvent.query.join(Module, ExamEvent.module_id == Module.id)
+        .filter(Module.user_id == current_user.id)
+        .order_by(ExamEvent.exam_start_date.asc())
+        .all()
+    )
+    plans = StudyPlan.query.filter_by(user_id=current_user.id).order_by(StudyPlan.exam_start_date.asc()).all()
+    for plan in plans:
+        reschedule_missed_items(plan)
+    return render_template("planner.html", modules=modules_list, topics=topics, exams=exams, plans=plans)
+
+
+@app.route("/planner/topic/<int:topic_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_topic(topic_id):
+    topic = StudyTopic.query.get_or_404(topic_id)
+    if topic.module.user_id != current_user.id:
+        abort(403)
+    if request.method == "POST":
+        title = clean_text(request.form.get("title"))
+        try:
+            preference = bound_int(request.form.get("preference_score", 5), "Preference", 0, 10)
+        except ValueError as exc:
+            flash(str(exc))
+            return redirect(url_for("edit_topic", topic_id=topic.id))
+        if len(title) < 2 or len(title) > 200:
+            flash("Topic title must be between 2 and 200 characters.")
+            return redirect(url_for("edit_topic", topic_id=topic.id))
+        uploaded = request.files.get("source_file")
+        if uploaded and uploaded.filename:
+            if not allowed_file(uploaded.filename):
+                flash("Unsupported file type.")
+                return redirect(url_for("edit_topic", topic_id=topic.id))
+            file_name, save_path = save_upload(uploaded)
+            topic.source_file = file_name
+            topic.difficulty_score = estimate_difficulty_from_text(title, extract_uploaded_text(save_path))
+        else:
+            topic.difficulty_score = estimate_difficulty_from_text(title, "")
+        topic.title = title
+        topic.preference_score = preference
+        topic.priority_value = calculate_topic_priority(topic.difficulty_score, preference)
+        db.session.commit()
+        flash("Topic updated.")
+        return redirect(url_for("planner"))
+    return render_template("topic_edit.html", topic=topic)
+
+
+@app.route("/planner/topic/<int:topic_id>/delete", methods=["POST"])
+@login_required
+def delete_topic(topic_id):
+    topic = StudyTopic.query.get_or_404(topic_id)
+    if topic.module.user_id != current_user.id:
+        abort(403)
+    db.session.delete(topic)
+    db.session.commit()
+    flash("Topic deleted.")
+    return redirect(url_for("planner"))
+
+
+@app.route("/planner/generate/<int:exam_id>", methods=["POST"])
+@login_required
+def generate_plan(exam_id):
+    exam = ExamEvent.query.get_or_404(exam_id)
+    if exam.module.user_id != current_user.id:
+        abort(403)
+    if StudyPlan.query.filter_by(user_id=current_user.id, module_id=exam.module_id, exam_start_date=exam.exam_start_date, exam_end_date=exam.exam_end_date).first():
+        flash("A plan already exists for this exam.")
+        return redirect(url_for("planner"))
+    plan = generate_study_plan_for_exam(
+        current_user,
+        exam.module_id,
+        exam.exam_start_date,
+        exam.exam_end_date,
+        plan_name=f"{exam.module.code} {exam.exam_kind.title()} Exam Plan"
+    )
+    if not plan:
+        flash("Add at least one topic for this module before generating a plan.")
+        return redirect(url_for("planner"))
+    flash("Study plan generated.")
+    return redirect(url_for("planner"))
+
+
+@app.route("/planner/<int:plan_id>/share", methods=["POST"])
+@login_required
+def share_plan(plan_id):
+    plan = StudyPlan.query.get_or_404(plan_id)
+    if plan.user_id != current_user.id:
+        abort(403)
+    plan.is_shared = True
+    db.session.commit()
+    flash("Plan shared.")
+    return redirect(url_for("planner"))
+
+
+@app.route("/planner/<int:plan_id>/reschedule", methods=["POST"])
+@login_required
+def reschedule_plan(plan_id):
+    plan = StudyPlan.query.get_or_404(plan_id)
+    if plan.user_id != current_user.id:
+        abort(403)
+    reschedule_missed_items(plan)
+    flash("Plan rescheduled.")
+    return redirect(url_for("planner"))
+
+
+@app.route("/planner/item/<int:item_id>/toggle", methods=["POST"])
+@login_required
+def toggle_plan_item(item_id):
+    item = StudyPlanItem.query.get_or_404(item_id)
+    if item.plan.user_id != current_user.id:
+        abort(403)
+    item.completed = not item.completed
+    db.session.commit()
+    return jsonify({"completed": item.completed})
