@@ -3,11 +3,10 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import datetime, timedelta, date
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any
 
-from models import db, Assignment, ExamEvent, StudyPlan, StudyPlanItem, StudyTopic, StudyGroup, StudyGroupMember, Notification, User, Module
+from models import Assignment, ExamEvent, StudyGroup, StudyGroupMember, StudyPlan, StudyPlanItem, StudyTopic, Notification, User, Module, db
 
 ALLOWED_EXTENSIONS = {"pdf", "ppt", "pptx", "doc", "docx", "txt", "png", "jpg", "jpeg"}
 STATUS_ORDER = ["Not Started", "In Progress", "Submitted", "Completed"]
@@ -77,8 +76,18 @@ def cycle_status(current: str) -> str:
     return STATUS_ORDER[(idx + 1) % len(STATUS_ORDER)]
 
 
-def calculate_topic_priority(difficulty: int, dislike: int) -> int:
-    return (difficulty * 2) + dislike
+def status_class(status: str) -> str:
+    mapping = {
+        "Not Started": "status-not-started",
+        "In Progress": "status-in-progress",
+        "Submitted": "status-submitted",
+        "Completed": "status-completed",
+    }
+    return mapping.get(status, "status-not-started")
+
+
+def calculate_topic_priority(difficulty: int, preference: int) -> int:
+    return (difficulty * 2) + (10 - preference)
 
 
 def _gemini_client():
@@ -98,10 +107,9 @@ def _parse_difficulty_response(text: str) -> int | None:
     try:
         data = json.loads(text)
         if isinstance(data, dict):
-            if "difficulty" in data:
-                return max(1, min(10, int(data["difficulty"])))
-            if "score" in data:
-                return max(1, min(10, int(data["score"])))
+            for key in ("difficulty", "score"):
+                if key in data:
+                    return max(1, min(10, int(data[key])))
     except Exception:
         pass
     match = re.search(r"(10|[1-9])", text)
@@ -130,10 +138,7 @@ Rules:
 """.strip()
 
     try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-        )
+        response = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
         text = getattr(response, "text", "") or ""
         difficulty = _parse_difficulty_response(text)
         if difficulty is not None:
@@ -174,10 +179,7 @@ def extract_uploaded_text(path: Path) -> str:
             try:
                 from pypdf import PdfReader
                 reader = PdfReader(str(path))
-                chunks = []
-                for page in reader.pages[:20]:
-                    chunks.append(page.extract_text() or "")
-                return "\n".join(chunks)
+                return "\n".join((page.extract_text() or "") for page in reader.pages[:20])
             except Exception:
                 pass
         if suffix == ".docx":
@@ -204,18 +206,21 @@ def extract_uploaded_text(path: Path) -> str:
         return ""
 
 
-def create_exam_anchor(module: Module, exam_date: datetime, assignment_id: int | None = None):
-    normalized_exam_date = exam_date.replace(hour=0, minute=0, second=0, microsecond=0)
-    existing = ExamEvent.query.filter_by(module_id=module.id, exam_date=normalized_exam_date).first()
+def create_exam_anchor(module: Module, exam_start_date: date, exam_end_date: date, assignment_id: int | None = None, exam_kind: str = "mid"):
+    existing = ExamEvent.query.filter_by(
+        module_id=module.id,
+        exam_start_date=exam_start_date,
+        exam_end_date=exam_end_date,
+        exam_kind=exam_kind,
+    ).first()
     if existing:
-        if not getattr(existing, "module_code", None):
-            existing.module_code = module.code
-            db.session.commit()
         return existing
     exam = ExamEvent(
         module_id=module.id,
         module_code=module.code,
-        exam_date=normalized_exam_date,
+        exam_kind=exam_kind,
+        exam_start_date=exam_start_date,
+        exam_end_date=exam_end_date,
         created_from_assignment_id=assignment_id,
     )
     db.session.add(exam)
@@ -223,7 +228,19 @@ def create_exam_anchor(module: Module, exam_date: datetime, assignment_id: int |
     return exam
 
 
-def generate_study_plan_for_exam(user: User, module_id: int, exam_date: datetime, plan_name: str):
+def _available_days_before_exam(exam_start_date: date) -> list[date]:
+    today = date.today()
+    if exam_start_date <= today:
+        return [today]
+    days = []
+    cursor = today
+    while cursor < exam_start_date:
+        days.append(cursor)
+        cursor += timedelta(days=1)
+    return days or [today]
+
+
+def generate_study_plan_for_exam(user: User, module_id: int, exam_start_date: date, exam_end_date: date, plan_name: str):
     topics = StudyTopic.query.filter_by(module_id=module_id).order_by(StudyTopic.priority_value.desc(), StudyTopic.id.asc()).all()
     if not topics:
         return None
@@ -231,35 +248,35 @@ def generate_study_plan_for_exam(user: User, module_id: int, exam_date: datetime
     plan = StudyPlan(
         user_id=user.id,
         module_id=module_id,
-        exam_date=exam_date,
+        exam_start_date=exam_start_date,
+        exam_end_date=exam_end_date,
         plan_name=plan_name,
         is_shared=False,
     )
     db.session.add(plan)
     db.session.flush()
 
-    exam_day = exam_date.date()
-    today = date.today()
-    if exam_day <= today:
-        available_days = [today]
-    else:
-        available_days = []
-        cursor = max(today, exam_day - timedelta(days=len(topics)))
-        while cursor < exam_day:
-            available_days.append(cursor)
-            cursor += timedelta(days=1)
-        if not available_days:
-            available_days = [today]
-
+    study_days = _available_days_before_exam(exam_start_date)
     for index, topic in enumerate(topics):
-        day_index = min(index, len(available_days) - 1)
+        target_day = study_days[min(index, len(study_days) - 1)]
         db.session.add(StudyPlanItem(
             plan_id=plan.id,
             topic_id=topic.id,
-            target_date=available_days[day_index],
+            target_date=target_day,
             completed=False,
             note=""
         ))
+
+    cursor = exam_start_date
+    while cursor <= exam_end_date:
+        db.session.add(StudyPlanItem(
+            plan_id=plan.id,
+            topic_id=None,
+            target_date=cursor,
+            completed=False,
+            note=f"Exam window: {plan_name}"
+        ))
+        cursor += timedelta(days=1)
 
     db.session.commit()
     return plan
@@ -270,7 +287,7 @@ def reschedule_missed_items(plan: StudyPlan):
     items = StudyPlanItem.query.filter_by(plan_id=plan.id).order_by(StudyPlanItem.target_date.asc()).all()
     next_day = today
     for item in items:
-        if item.completed:
+        if item.completed or item.topic_id is None:
             continue
         if item.target_date < today:
             item.target_date = next_day
@@ -300,9 +317,8 @@ def _group_match_score(user: User, group: StudyGroup) -> int:
     return sum(scores) // len(scores)
 
 
-def create_or_join_group_for_exam(module: Module, exam_date: datetime, user: User):
-    normalized_exam_date = exam_date.replace(hour=0, minute=0, second=0, microsecond=0)
-    candidates = StudyGroup.query.filter_by(module_code=module.code, exam_date=normalized_exam_date, status="open").all()
+def create_or_join_group_for_exam(module: Module, exam_start_date: date, exam_end_date: date, user: User):
+    candidates = StudyGroup.query.filter_by(module_code=module.code, exam_start_date=exam_start_date, exam_end_date=exam_end_date, status="open").all()
 
     chosen = None
     best_score = -1
@@ -317,7 +333,8 @@ def create_or_join_group_for_exam(module: Module, exam_date: datetime, user: Use
         chosen = StudyGroup(
             module_id=module.id,
             module_code=module.code,
-            exam_date=normalized_exam_date,
+            exam_start_date=exam_start_date,
+            exam_end_date=exam_end_date,
             location_pref=user.location_pref or "",
             group_name=f"{module.code} study circle {suffix}",
             status="open",
@@ -332,23 +349,6 @@ def create_or_join_group_for_exam(module: Module, exam_date: datetime, user: Use
         db.session.add(StudyGroupMember(group_id=chosen.id, user_id=user.id, role="member"))
     db.session.commit()
     return chosen
-
-
-def score_group_match(user: User, other: User, module_id: int, exam_date: datetime):
-    score = 0
-    if user.location_pref and other.location_pref and user.location_pref.lower() == other.location_pref.lower():
-        score += 2
-    if user.availability and other.availability:
-        u = set(user.availability.lower().replace(",", " ").split())
-        o = set(other.availability.lower().replace(",", " ").split())
-        score += len(u.intersection(o))
-    if user.study_goal and other.study_goal and user.study_goal.lower() == other.study_goal.lower():
-        score += 2
-    if module_id:
-        score += 3
-    if exam_date:
-        score += 2
-    return score
 
 
 def notify(user_id: int, item_type: str, item_id: int, message: str):
