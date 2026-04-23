@@ -6,33 +6,35 @@
     <h1>Start your StudyDesk workspace</h1>
     <p class="muted">Add your profile preferences now so planner and group matching feel personalized from the first exam.</p>
     <div class="helper-grid">
-      <div class="help-card"><strong>Availability</strong><p>Write simple time blocks such as “Mon evening” or “Wed 2–5 pm.” This helps StudyDesk suggest better study groups.</p></div>
+      <div class="help-card"><strong>Availability</strong><p>Write simple time blocks such as “Mon evening” or “Wed 2–5 pm.”</p></div>
       <div class="help-card"><strong>Location preference</strong><p>Use “library,” “hostel,” or “online” to bias matching toward students who study in similar places.</p></div>
-      <div class="help-card"><strong>Study goal</strong><p>A short goal such as “aiming for an A” or “need revision every week” can improve the group context shown to peers.</p></div>
+      <div class="help-card"><strong>Study goal</strong><p>A short goal such as “aiming for an A” can improve the group context shown to peers.</p></div>
     </div>
-    <form method="post" class="form-grid two-col">
-      <label>Name
-        <input type="text" name="name" required minlength="2" maxlength="80" placeholder="Your full name" title="Shown in groups and your profile">
-      </label>
-      <label>Email
-        <input type="email" name="email" required maxlength="120" placeholder="name@example.com" title="Used to log in">
-      </label>
-      <label>Password
-        <input type="password" name="password" required minlength="8" maxlength="128" placeholder="Create a strong password" title="At least 8 characters, with letters and numbers">
-      </label>
-      <label>Program
-        <input type="text" name="program" maxlength="120" placeholder="e.g. Computer Science">
-      </label>
-      <label>Location preference
-        <input type="text" name="location_pref" maxlength="120" placeholder="Library / hostel / online" title="Helps study-group matching">
-      </label>
-      <label>Availability
-        <input type="text" name="availability" maxlength="255" placeholder="Mon evening, Wed night" title="Used by group matching">
-      </label>
-      <label>Study goal
-        <textarea name="study_goal" rows="3" maxlength="255" placeholder="What are you aiming for this term?" title="Shown to your study group"></textarea>
-      </label>
-      <button type="submit">Create account</button>
+    <form method="post" class="form-grid form-layout">
+      <div class="form-main">
+        <div class="form-fields two-col">
+          <label>Name<input type="text" name="name" required minlength="2" maxlength="80" placeholder="Your full name"></label>
+          <label>Email<input type="email" name="email" required maxlength="120" placeholder="name@example.com"></label>
+          <label>Password<input type="password" name="password" required minlength="8" maxlength="128" placeholder="Create a strong password"></label>
+          <label>Program<input type="text" name="program" maxlength="120" placeholder="e.g. Computer Science"></label>
+          <label>Location preference<input type="text" name="location_pref" maxlength="120" placeholder="Library / hostel / online"></label>
+          <label>Availability<input type="text" name="availability" maxlength="255" placeholder="Mon evening, Wed night"></label>
+          <label class="span-2 soft-field">Study goal<textarea name="study_goal" rows="3" maxlength="255" placeholder="What are you aiming for this term?"></textarea></label>
+        </div>
+      </div>
+
+      <aside class="form-rail">
+        <div class="form-banner">
+          <strong>Your account powers more than sign-in</strong>
+          <p>These details help StudyDesk tailor study groups, planner reminders, and profile cards from the start.</p>
+        </div>
+        <div class="help-card"><strong>Best results</strong><p>Use the same name and email you will remember later. The rest can be updated anytime from Profile.</p></div>
+        <div class="help-card"><strong>Fast setup</strong><p>Even a short availability note is enough to unlock smarter matching.</p></div>
+      </aside>
+
+      <div class="form-actions">
+        <button type="submit">Create account</button>
+      </div>
     </form>
   </section>
 </div>

@@ -3,44 +3,60 @@
 <section class="card">
   <div class="section-head">
     <div>
-      <div class="eyebrow">Module registry</div>
+      <div class="eyebrow">Module page</div>
       <h1>Modules</h1>
     </div>
-    <span class="tip" title="Every assignment, topic, exam, and group starts with a module.">i</span>
+    <span class="tip" title="Create, edit, and delete modules from here.">i</span>
   </div>
   <div class="helper-grid">
-    <div class="help-card"><strong>Credits</strong><p>Use the credit count from your syllabus. Higher-credit modules can be given more attention in planning.</p></div>
+
+    <div class="help-card"><strong>Credits</strong><p>Store the module weight so the dashboard can reflect load more clearly.</p></div>
+    <div class="help-card"><strong>Edit later</strong><p>Every created module can be updated after saving.</p></div>
   </div>
-  <form method="post" class="form-grid three-col">
-    <label>Code
-      <input type="text" name="code" required minlength="2" maxlength="20" pattern="[A-Za-z0-9][A-Za-z0-9\- ]{1,19}" placeholder="e.g. CS101" title="2 to 20 characters; letters, numbers, spaces, or hyphens">
-    </label>
-    <label>Name
-      <input type="text" name="name" required minlength="2" maxlength="120" placeholder="e.g. Introduction to Computing">
-    </label>
-    <label>Credits
-      <input type="number" name="credits" min="0" max="60" value="0" title="Credit weight used for prioritization">
-    </label>
-    <button type="submit">Add module</button>
+  <form method="post" class="form-grid form-layout">
+    <div class="form-main">
+      <div class="form-fields two-col">
+        <label>Code
+          <input type="text" name="code" required maxlength="20" placeholder="CSC101" title="2–20 characters, letters/numbers/hyphen/space">
+        </label>
+        <label>Credits
+          <input type="number" name="credits" min="0" max="60" value="0" title="Whole number from 0 to 60">
+        </label>
+        <label class="span-2">Name
+          <input type="text" name="name" required minlength="2" maxlength="120" placeholder="Introduction to Computing">
+        </label>
+      </div>
+    </div>
+
+
+    <div class="form-actions">
+      <button type="submit">Add module</button>
+    </div>
   </form>
 </section>
 
-<div class="toolbar">
-  <input type="search" class="searchbox" placeholder="Filter modules…" data-live-filter=".module-card" title="Search your module list">
-</div>
-
-<div class="grid">
-  {% for m in modules %}
-  <div class="card module-card">
-    <div class="section-head">
-      <h3>{{ m.code }}</h3>
-      <span class="pill">{{ m.credits }} cr</span>
-    </div>
-    <p>{{ m.name }}</p>
-    <form method="post" action="{{ url_for('delete_module', module_id=m.id) }}">
-      <button class="danger" type="submit" title="Remove this module and its linked records">Delete</button>
-    </form>
+<section class="card">
+  <div class="section-head"><h2>Your modules</h2><span class="tip" title="Edit or delete any module card.">i</span></div>
+  <div class="grid-2">
+    {% for m in modules %}
+      <div class="mini-card">
+        <div class="plan-head">
+          <div>
+            <strong>{{ m.code }}</strong>
+            <div class="subtle">{{ m.name }}</div>
+          </div>
+          <span class="pill">{{ m.credits }} credits</span>
+        </div>
+        <div class="row">
+          <a class="button-link" href="{{ url_for('edit_module', module_id=m.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('delete_module', module_id=m.id) }}">
+            <button class="danger" type="submit">Delete</button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <p class="muted">No modules added yet.</p>
+    {% endfor %}
   </div>
-  {% endfor %}
-</div>
+</section>
 {% endblock %}

@@ -1,11 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="auth-shell">
-  <section class="auth-card">
-    <div class="eyebrow">Status</div>
-    <h1>{{ title }}</h1>
-    <p class="muted">{{ message }}</p>
-    <a class="button-link" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('login') }}">Go back</a>
-  </section>
-</div>
+<section class="auth-card wide">
+  <h1>{{ title }}</h1>
+  <p class="muted">{{ message }}</p>
+  <a class="button-link" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('login') }}">Go back</a>
+</section>
 {% endblock %}

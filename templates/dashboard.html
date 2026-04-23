@@ -4,7 +4,7 @@
   <div>
     <div class="eyebrow">Academic workload cockpit</div>
     <h1>Hello, {{ current_user.name }}.</h1>
-    <p>Track assignments, shape study plans, and keep group work synchronized without losing momentum.</p>
+    <p>Track your work, shape your study plans, and keep group work synchronized without losing momentum.</p>
     <div class="hero-actions">
       <a class="button-link" href="{{ url_for('assignments') }}">Add task</a>
       <a class="button-link secondary" href="{{ url_for('planner') }}">Build plan</a>
@@ -12,15 +12,9 @@
     </div>
   </div>
   <div class="stat-stack">
-    <div class="stat-box">
-      <strong>{{ stats.modules }}</strong><span>modules</span>
-    </div>
-    <div class="stat-box">
-      <strong>{{ stats.assignments }}</strong><span>tasks</span>
-    </div>
-    <div class="stat-box">
-      <strong>{{ stats.unread }}</strong><span>new alerts</span>
-    </div>
+    <div class="stat-box"><strong>{{ stats.modules }}</strong><span>modules</span></div>
+    <div class="stat-box"><strong>{{ stats.assignments }}</strong><span>tasks</span></div>
+    <div class="stat-box"><strong>{{ stats.unread }}</strong><span>new alerts</span></div>
   </div>
 </section>
 
@@ -33,96 +27,101 @@
 
 <div class="grid-3">
   <section class="card">
-    <div class="section-head">
-      <h2>Modules</h2>
-      <span class="tip" title="Modules are the parent containers for assignments, topics, and groups.">i</span>
-    </div>
+    <div class="section-head"><h2>Modules</h2><span class="tip" title="Modules are the parent containers for assignments, topics, and groups.">i</span></div>
     {% if modules %}
       <ul class="list compact">
         {% for m in modules %}
           <li><strong>{{ m.code }}</strong> - {{ m.name }} <span class="subtle">({{ m.credits }} credits)</span></li>
         {% endfor %}
       </ul>
-    {% else %}
-      <p class="muted">Add a module to start tracking coursework.</p>
-    {% endif %}
+    {% else %}<p class="muted">Add a module to start tracking coursework.</p>{% endif %}
   </section>
-
   <section class="card">
-    <div class="section-head">
-      <h2>Upcoming exams</h2>
-      <span class="tip" title="Exam dates are automatically turned into study-plan anchors.">i</span>
-    </div>
+    <div class="section-head"><h2>Upcoming exams</h2><span class="tip" title="Exam dates are automatically turned into fixed planning anchors.">i</span></div>
     {% if exams %}
       <div class="stack">
         {% for e in exams %}
           <div class="mini-card">
-            <strong>{{ e.module.code }}</strong>
-            <div>{{ e.exam_date|dt }}</div>
+            <strong>{{ e.module.code }}{% if e.exam_kind %} · {{ e.exam_kind|title }}{% endif %}</strong>
+            <div>{{ e.exam_start_date|dt }} → {{ e.exam_end_date|dt }}</div>
             <div class="subtle">{{ e.module.name }}</div>
           </div>
         {% endfor %}
       </div>
-    {% else %}
-      <p class="muted">No exam anchors yet.</p>
-    {% endif %}
+    {% else %}<p class="muted">No exam anchors yet.</p>{% endif %}
   </section>
-
   <section class="card">
-    <div class="section-head">
-      <h2>Notifications</h2>
-      <span class="tip" title="Tap a notification to mark it as read. Use the clear-all button for a clean inbox.">i</span>
-    </div>
+    <div class="section-head"><h2>Notifications</h2><span class="tip" title="Tap a notification to mark it as read.">i</span></div>
     <div class="row between">
       <span class="pill">{{ stats.unread }} unread</span>
-      <button type="button" class="ghost-button" data-mark-all-read title="Mark every notification as read">Mark all read</button>
+      <button type="button" class="ghost-button" data-mark-all-read>Mark all read</button>
     </div>
     {% if notifications %}
       <ul class="list compact notif-list">
         {% for n in notifications %}
-          <li class="notif-item {{ 'unread' if not n.is_read else 'read' }}" data-notification-id="{{ n.id }}" title="Click to mark as read">{{ n.message }}</li>
+          <li class="notif-item {{ 'unread' if not n.is_read else 'read' }}" data-notification-id="{{ n.id }}">{{ n.message }}</li>
         {% endfor %}
       </ul>
-    {% else %}
-      <p class="muted">No reminders right now.</p>
-    {% endif %}
+    {% else %}<p class="muted">No reminders right now.</p>{% endif %}
   </section>
 </div>
 
 <section class="card">
   <div class="section-head">
-    <h2>Assignments sorted by urgency</h2>
-    <span class="tip" title="The dashboard sorts by deadline first, then priority and credit weight.">i</span>
+    <div>
+      <h2>Assessments by deadline</h2>
+      <p class="subtle">Grouped into Overdue, Due Today, Due This Week, and Upcoming.</p>
+    </div>
+    <span class="tip" title="The dashboard sorts by deadline, then priority, then credit weight.">i</span>
   </div>
   <div class="toolbar">
-    <input type="search" class="searchbox" placeholder="Filter tasks…" data-live-filter=".assignment-row" title="Search by title, type, or status">
+    <input type="search" class="searchbox" placeholder="Search tasks…" data-live-filter=".assignment-row" title="Search by title, module, type, or status">
+    <select class="searchbox" data-live-filter-by=".assignment-row" data-live-filter-field="type">
+      <option value="">All task types</option>
+      <option value="assignment">Assignments</option>
+      <option value="lab">Labs</option>
+      <option value="quiz">Quizzes</option>
+      <option value="exam">Exams</option>
+      <option value="project">Projects</option>
+    </select>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr><th>Task</th><th>Type</th><th>Deadline</th><th>Weight</th><th>Priority</th><th>Status</th><th></th></tr>
-      </thead>
-      <tbody>
-        {% for a in assignments %}
-        <tr class="assignment-row">
-          <td>
-            <strong>{{ a.title }}</strong>
-            <div class="subtle">{{ a.module.code }}</div>
-          </td>
-          <td><span class="pill">{{ a.type }}</span></td>
-          <td>{{ a.deadline|dt }}</td>
-          <td>{{ a.credit_weight }}</td>
-          <td>{{ a.priority_level }}</td>
-          <td><button class="status-btn" data-id="{{ a.id }}" title="Tap to cycle: Not Started → In Progress → Submitted → Completed">{{ a.status }}</button></td>
-          <td>
-            <form method="post" action="{{ url_for('delete_assignment', assignment_id=a.id) }}">
-              <button class="danger" type="submit" title="Delete this task">Delete</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  {% for bucket, items in assignment_buckets.items() %}
+    <div class="bucket-wrap">
+      <div class="section-head bucket-title">
+        <h3>{{ bucket }}</h3>
+        <span class="pill">{{ items|length }}</span>
+      </div>
+      {% if items %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Task</th><th>Module</th><th>Deadline</th><th>Priority</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for a in items %}
+              <tr class="assignment-row" data-type="{{ a.type }}">
+                <td>
+                  <strong>{{ a.title }}</strong>
+                  <div class="subtle">{{ a.type|title }} {% if a.type == 'exam' and a.exam_kind %}· {{ a.exam_kind|title }}{% endif %}</div>
+                </td>
+                <td>{{ a.module.code }}</td>
+                <td>{{ a.deadline|dt }}</td>
+                <td>{{ a.priority_level }}</td>
+                <td><button class="status-btn {{ a.status|status_css }}" data-id="{{ a.id }}" title="Tap to cycle Not Started → In Progress → Submitted → Completed">{{ a.status }}</button></td>
+                <td>
+                  <form method="post" action="{{ url_for('delete_assignment', assignment_id=a.id) }}">
+                    <button class="danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">No tasks in this bucket.</p>
+      {% endif %}
+    </div>
+  {% endfor %}
 </section>
 {% endblock %}

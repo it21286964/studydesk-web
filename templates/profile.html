@@ -4,31 +4,30 @@
   <div>
     <div class="eyebrow">Account settings</div>
     <h1>Profile</h1>
-    <p>Keep your personal details, study preferences, and password up to date.</p>
+    <p>Update your personal details, profile picture, and password.</p>
   </div>
-  <div class="stat-box">
-    <strong>{{ current_user.name[:1]|upper }}</strong>
-    <span>initial</span>
+  <div class="avatar-wrap">
+    {% if current_user.profile_picture %}
+      <img class="avatar" src="{{ url_for('static', filename=current_user.profile_picture) }}" alt="Profile picture">
+    {% else %}
+      <div class="avatar avatar-fallback">{{ current_user.name[:1]|upper }}</div>
+    {% endif %}
   </div>
 </section>
 
 <div class="grid-2">
   <section class="card">
-    <div class="section-head">
-      <h2>Update details</h2>
-      <span class="tip" title="These fields are used in group matching and your profile display.">i</span>
-    </div>
-    <div class="helper-grid">
-      <div class="help-card"><strong>Name</strong><p>Shown in the app and in study groups.</p></div>
-      <div class="help-card"><strong>Email</strong><p>Used to sign in and recover your account if needed.</p></div>
-      <div class="help-card"><strong>Availability</strong><p>Used for matching joint sessions and open study groups.</p></div>
-    </div>
-    <form method="post" class="form-grid">
+    <div class="section-head"><h2>Update details</h2><span class="tip" title="These fields are used in group matching and your profile display.">i</span></div>
+    
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+      <label>Profile picture
+        <input type="file" name="profile_picture" accept=".png,.jpg,.jpeg,.webp" title="Upload a profile picture">
+      </label>
       <label>Name
-        <input type="text" name="name" value="{{ current_user.name }}" required minlength="2" maxlength="80" title="2 to 80 characters">
+        <input type="text" name="name" value="{{ current_user.name }}" required minlength="2" maxlength="80">
       </label>
       <label>Email
-        <input type="email" name="email" value="{{ current_user.email }}" required maxlength="120" title="Use a valid email address">
+        <input type="email" name="email" value="{{ current_user.email }}" required maxlength="120">
       </label>
       <label>Program
         <input type="text" name="program" value="{{ current_user.program }}" maxlength="120" placeholder="Degree or study track">
@@ -47,19 +46,16 @@
   </section>
 
   <section class="card">
-    <div class="section-head">
-      <h2>Change password</h2>
-      <span class="tip" title="Use a password you have not reused elsewhere.">i</span>
-    </div>
+    <div class="section-head"><h2>Change password</h2><span class="tip" title="Use a password you have not reused elsewhere.">i</span></div>
     <form method="post" action="{{ url_for('change_password') }}" class="form-grid">
       <label>Current password
-        <input type="password" name="current_password" required maxlength="128" title="Enter your current password">
+        <input type="password" name="current_password" required maxlength="128">
       </label>
       <label>New password
-        <input type="password" name="new_password" required minlength="8" maxlength="128" title="At least 8 characters with letters and numbers">
+        <input type="password" name="new_password" required minlength="8" maxlength="128">
       </label>
       <label>Confirm password
-        <input type="password" name="confirm_password" required minlength="8" maxlength="128" title="Re-enter the new password">
+        <input type="password" name="confirm_password" required minlength="8" maxlength="128">
       </label>
       <button type="submit">Update password</button>
     </form>

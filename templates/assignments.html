@@ -8,42 +8,73 @@
     </div>
     <span class="tip" title="Tap a status button to quickly move a task through the workflow.">i</span>
   </div>
-  <p class="muted">Keep all graded work in one place. Exams added here also become study-plan anchors in Study planner.</p>
+  <p class="muted">Keep all graded work in one place. Mid and Final exams are also pushed to the study planner automatically.</p>
   <div class="helper-grid">
     <div class="help-card"><strong>Priority level</strong><p>1 = low urgency, 5 = medium, 10 = highest urgency. Bigger numbers push the task nearer the top when deadlines are similar.</p></div>
-    <div class="help-card"><strong>Credit weight</strong><p>Use this to reflect how much the task counts toward the module. Higher weights help the dashboard favor it when several items are close together.</p></div>
+    <div class="help-card"><strong>Credit weight</strong><p>Reflect how much the task counts toward the module. Higher weights help the dashboard favor it when items are otherwise close.</p></div>
   </div>
-  <form method="post" class="form-grid three-col">
-    <label>Module
-      <select name="module_id" required title="Choose the module this task belongs to">
-        {% for m in modules %}
-          <option value="{{ m.id }}">{{ m.code }} - {{ m.name }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>Title
-      <input type="text" name="title" required minlength="3" maxlength="200" placeholder="Weekly quiz, lab report, final project…">
-    </label>
-    <label>Type
-      <select name="type" required title="Task category">
-        <option>assignment</option>
-        <option>lab</option>
-        <option>quiz</option>
-        <option>exam</option>
-        <option>project</option>
-      </select>
-    </label>
-    <label>Deadline
-      <input type="datetime-local" name="deadline" required title="Pick the exact due date and time">
-    </label>
-    <label>Credit weight
-      <input type="number" name="credit_weight" min="0" max="100" value="0" title="Higher weights make the task more important when tasks feel similar">
-    </label>
-    <label>Priority level
-      <input type="number" name="priority_level" min="1" max="10" value="1" title="1 means low urgency; 10 means top priority">
-      <span class="field-help">1 = low urgency, 5 = medium, 10 = highest priority.</span>
-    </label>
-    <button type="submit">Add task</button>
+  <form method="post" class="form-grid form-layout" id="assignment-form">
+    <div class="form-main">
+      <div class="form-fields two-col">
+        <label class="span-2">Title
+          <input type="text" name="title" required minlength="3" maxlength="200" placeholder="Weekly quiz, lab report, final project…">
+        </label>
+        <label>Module
+          <select name="module_id" required title="Choose the module this task belongs to">
+            {% for m in modules %}
+              <option value="{{ m.id }}">{{ m.code }} - {{ m.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Type
+          <select name="type" id="task-type" required title="Task category">
+            <option value="assignment">assignment</option>
+            <option value="lab">lab</option>
+            <option value="quiz">quiz</option>
+            <option value="exam">exam</option>
+            <option value="project">project</option>
+          </select>
+        </label>
+        <label>Deadline
+          <input type="datetime-local" name="deadline" required class="future-date" title="Pick the exact due date and time">
+        </label>
+        <label>Credit weight
+          <input type="number" name="credit_weight" min="0" max="100" value="0" title="Higher weights make the task more important when tasks feel similar">
+        </label>
+        <label>Priority level
+          <input type="number" name="priority_level" min="1" max="10" value="1" title="1 means low urgency; 10 means top priority">
+          <span class="field-help">1 = low urgency, 5 = medium, 10 = highest priority.</span>
+        </label>
+      </div>
+
+      <div id="exam-extra" class="form-fields two-col hidden-section">
+        <label>Exam kind
+          <select name="exam_kind" title="Mid and Final exams create fixed planning anchors automatically.">
+            <option value="mid">Mid Exam</option>
+            <option value="final">Final Exam</option>
+            <option value="other">Other Exam</option>
+          </select>
+        </label>
+        <label>Exam start date
+          <input type="date" name="exam_start_date" class="future-date" title="First exam day">
+        </label>
+        <label>Exam end date
+          <input type="date" name="exam_end_date" class="future-date" title="Last exam day">
+        </label>
+        <div class="help-card soft-card span-2 exam-tip"><strong>How it works</strong><p>For Mid/Final exams, the planner uses the start and end dates as fixed anchors and blocks the exam window automatically.</p></div>
+      </div>
+    </div>
+
+    <aside class="form-rail">
+      <div class="form-banner">
+        <strong>Quick task builder</strong>
+        <p>Use a clear title, set the deadline first, then adjust priority and weight. The form is tuned for fast data entry without wasting space.</p>
+      </div>
+    </aside>
+
+    <div class="form-actions">
+      <button type="submit">Add task</button>
+    </div>
   </form>
 </section>
 
@@ -54,7 +85,7 @@
 <section class="card">
   <div class="section-head">
     <h2>Tracked work</h2>
-    <span class="tip" title="Assigning an exam here creates the matching study-session anchor automatically.">i</span>
+    <span class="tip" title="Use the status button for quick progress updates.">i</span>
   </div>
   <div class="table-wrap">
     <table>
@@ -63,19 +94,20 @@
       </thead>
       <tbody>
         {% for a in assignments %}
-        <tr class="assignment-item">
+        <tr class="assignment-item" data-type="{{ a.type }}">
           <td>
             <strong>{{ a.title }}</strong>
             <div class="subtle">{{ a.module.code }} - {{ a.module.name }}</div>
+            {% if a.type == 'exam' %}<div class="subtle">{{ a.exam_kind|title }} · {{ a.exam_start_date|dt }} → {{ a.exam_end_date|dt }}</div>{% endif %}
           </td>
           <td><span class="pill">{{ a.type }}</span></td>
           <td>{{ a.deadline|dt }}</td>
           <td>{{ a.credit_weight }}</td>
           <td>{{ a.priority_level }}</td>
-          <td><button class="status-btn" data-id="{{ a.id }}" title="Cycle status with one tap">{{ a.status }}</button></td>
+          <td><button class="status-btn {{ a.status|status_css }}" data-id="{{ a.id }}">{{ a.status }}</button></td>
           <td>
             <form method="post" action="{{ url_for('delete_assignment', assignment_id=a.id) }}">
-              <button class="danger" type="submit" title="Delete this record">Delete</button>
+              <button class="danger" type="submit">Delete</button>
             </form>
           </td>
         </tr>
