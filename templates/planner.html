@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Study planner</div>
+      <h1>Study Session Management</h1>
+    </div>
+    <span class="tip" title="Topics are ranked by priority and Gemini can estimate difficulty from uploaded material.">i</span>
+  </div>
+  <p class="muted">Exam anchors from Mid and Final exams appear here. Plans are built day by day up to the exam window.</p>
+  <div class="helper-grid">
+    <div class="help-card"><strong>Difficulty</strong><p>Gemini scores each topic from 1 to 10. 1 means easy review, 5 means moderate, and 10 means very hard or concept-heavy.</p></div>
+    <div class="help-card"><strong>Preference</strong><p>0 means low preference, 5 means neutral, and 10 means highly preferred. Lower preference pushes the topic earlier so the hard or less-liked material gets attention sooner.</p></div>
+    <div class="help-card"><strong>File support</strong><p>PDF, slides, Word documents, images, and plain text can all feed the topic estimate.</p></div>
+  </div>
+
+  <div class="grid-2">
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+      <div class="form-main">
+        <div class="form-fields two-col">
+          <label class="span-2">Module
+            <select name="module_id" required>
+              {% for m in modules %}
+                <option value="{{ m.id }}">{{ m.code }} - {{ m.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="span-2">Topic title
+            <input type="text" name="title" required minlength="2" maxlength="200" placeholder="Binary trees, loop invariants, essay outline…">
+          </label>
+          <label>Preference
+            <input type="number" name="preference_score" min="0" max="10" value="5" title="0 means least preferred; 10 means highly preferred">
+            <span class="field-help">0 = least preferred, 5 = neutral, 10 = highly preferred.</span>
+          </label>
+          <label>Upload material
+            <input type="file" name="source_file" accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.png,.jpg,.jpeg" title="Upload supporting material so Gemini can estimate topic difficulty more accurately.">
+          </label>
+        </div>
+        <div id="exam-extra" class="hidden-section"></div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit">Add topic</button>
+      </div>
+    </form>
+
+    <div class="stack">
+      <div class="card soft-card">
+        <h3>Planning rule</h3>
+        <p class="muted">Priority = Difficulty × 2 + (10 - Preference). Missed days can be pulled forward again with one click.</p>
+      </div>
+      {% if exams %}
+        {% for e in exams %}
+          <div class="mini-card">
+            <strong>{{ e.module.code }}{% if e.exam_kind %} · {{ e.exam_kind|title }}{% endif %}</strong>
+            <div>{{ e.exam_start_date|dt }} → {{ e.exam_end_date|dt }}</div>
+            <form method="post" action="{{ url_for('generate_plan', exam_id=e.id) }}">
+              <button type="submit">Generate plan</button>
+            </form>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="muted">No exam anchors yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<div class="toolbar">
+  <input type="search" class="searchbox" placeholder="Filter topics…" data-live-filter=".topic-row" title="Search by topic, module, or score">
+</div>
+
+<section class="card">
+  <div class="section-head">
+    <h2>Topics ranked by priority</h2>
+    <span class="tip" title="Priority uses difficulty and preference.">i</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Topic</th><th>Module</th><th>Difficulty</th><th>Preference</th><th>Priority</th><th></th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for t in topics %}
+        <tr class="topic-row">
+          <td>{{ t.title }}</td>
+          <td>{{ t.module.code }}</td>
+          <td>{{ t.difficulty_score }}</td>
+          <td>{{ t.preference_score }}</td>
+          <td><span class="pill strong-pill">{{ t.priority_value }}</span></td>
+          <td>{% if t.source_file %}<a href="{{ url_for('download_upload', filename=t.source_file) }}">file</a>{% else %}-{% endif %}</td>
+          <td>
+            <div class="row">
+              <a class="button-link secondary" href="{{ url_for('edit_topic', topic_id=t.id) }}">Edit</a>
+              <form method="post" action="{{ url_for('delete_topic', topic_id=t.id) }}">
+                <button class="danger" type="submit">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <h2>Generated plans</h2>
+    <span class="tip" title="Each plan is grouped by day so students can see exactly what to study.">i</span>
+  </div>
+  {% for p in plans %}
+    <div class="plan-card">
+      <div class="plan-head">
+        <div>
+          <strong>{{ p.plan_name }}</strong>
+          <p class="subtle">{{ p.module.code }} | Exam: {{ p.exam_start_date|dt }} → {{ p.exam_end_date|dt }} | Shared: {{ 'Yes' if p.is_shared else 'No' }}</p>
+        </div>
+        <div class="row">
+          <form method="post" action="{{ url_for('share_plan', plan_id=p.id) }}"><button type="submit">Share</button></form>
+          <form method="post" action="{{ url_for('reschedule_plan', plan_id=p.id) }}"><button type="submit">Reschedule missed</button></form>
+        </div>
+      </div>
+      <div class="grid-2">
+        {% for day, items in p.items|groupby('target_date') %}
+          <div class="mini-card">
+            <strong>{{ day }}</strong>
+            <ul class="list compact">
+              {% for item in items %}
+                <li class="plan-item">
+                  {% if item.topic_id %}
+                    <button class="mini-status-btn {{ 'status-completed' if item.completed else 'status-not-started' }}" data-plan-item="{{ item.id }}">{{ 'Done' if item.completed else 'Open' }}</button>
+                    <span>{{ item.topic.title }}</span>
+                  {% else %}
+                    <span class="blocked">Blocked</span>
+                    <span>{{ item.note }}</span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <p class="muted">No plans generated yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

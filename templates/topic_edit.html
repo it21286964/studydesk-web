@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="auth-card wide">
+  <div class="eyebrow">Edit topic</div>
+  <h1>{{ topic.title }}</h1>
+  <form method="post" enctype="multipart/form-data" class="form-grid two-col">
+    <label>Title<input type="text" name="title" value="{{ topic.title }}" required minlength="2" maxlength="200"></label>
+    <label>Preference<input type="number" name="preference_score" min="0" max="10" value="{{ topic.preference_score }}"></label>
+    <label>Replace file<input type="file" name="source_file" accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.png,.jpg,.jpeg"></label>
+    <button type="submit">Save changes</button>
+    <a class="button-link secondary" href="{{ url_for('planner') }}">Cancel</a>
+  </form>
+</section>
+{% endblock %}
