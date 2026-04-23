@@ -6,13 +6,13 @@
     <h1>Sign in to StudyDesk</h1>
     <p class="muted">Keep your deadlines, study blocks, and group sessions aligned from one dashboard.</p>
     <form method="post" class="form-grid">
-      <label>Email
-        <input type="email" name="email" required maxlength="120" placeholder="name@example.com" title="Use the email linked to your StudyDesk account">
-      </label>
-      <label>Password
-        <input type="password" name="password" required maxlength="128" placeholder="••••••••" title="Enter your account password">
-      </label>
-      <button type="submit">Login</button>
+      <div class="form-fields">
+        <label>Email<input type="email" name="email" required maxlength="120" placeholder="name@example.com"></label>
+        <label>Password<input type="password" name="password" required maxlength="128" placeholder="••••••••"></label>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Login</button>
+      </div>
     </form>
     <p class="muted">No account yet? <a href="{{ url_for('register') }}">Create one</a></p>
   </section>
