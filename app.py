@@ -667,3 +667,199 @@ def toggle_plan_item(item_id):
     item.completed = not item.completed
     db.session.commit()
     return jsonify({"completed": item.completed})
+
+#Yenura
+@app.route("/groups")
+@login_required
+def groups():
+    memberships = StudyGroupMember.query.filter_by(user_id=current_user.id).all()
+    groups_data = [StudyGroup.query.get(m.group_id) for m in memberships]
+    open_groups = StudyGroup.query.order_by(StudyGroup.exam_start_date.desc()).all()
+    member_group_ids = [g.id for g in groups_data if g]
+    return render_template("groups.html", memberships=groups_data, open_groups=open_groups, member_group_ids=member_group_ids)
+
+
+@app.route("/groups/match")
+@login_required
+def match_groups():
+    exams = ExamEvent.query.join(Module, ExamEvent.module_id == Module.id).filter(Module.user_id == current_user.id).all()
+    for exam in exams:
+        create_or_join_group_for_exam(exam.module, exam.exam_start_date, exam.exam_end_date, current_user)
+    flash("Your exams were checked against compatible study groups.")
+    return redirect(url_for("groups"))
+
+
+@app.route("/groups/<int:group_id>")
+@login_required
+def group_detail(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    member = StudyGroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if not member:
+        flash("Join the group to see its resources and sessions.")
+        return redirect(url_for("groups"))
+    members = [User.query.get(m.user_id) for m in StudyGroupMember.query.filter_by(group_id=group.id).all()]
+    members = [m for m in members if m]
+    resources = Resource.query.filter_by(group_id=group.id).order_by(Resource.id.desc()).all()
+    sessions = JointSession.query.filter_by(group_id=group.id).order_by(JointSession.session_date.asc()).all()
+    shared_plans = StudyPlan.query.join(Module, StudyPlan.module_id == Module.id).filter(Module.code == group.module_code, StudyPlan.is_shared.is_(True)).all()
+    return render_template(
+        "group_detail.html",
+        group=group,
+        members=members,
+        resources=resources,
+        sessions=sessions,
+        shared_plans=shared_plans
+    )
+
+
+@app.route("/groups/<int:group_id>/join", methods=["POST"])
+@login_required
+def join_group(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    existing = StudyGroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if not existing:
+        db.session.add(StudyGroupMember(group_id=group.id, user_id=current_user.id, role="member"))
+        db.session.commit()
+    flash("Joined group.")
+    return redirect(url_for("group_detail", group_id=group.id))
+
+
+@app.route("/groups/<int:group_id>/resource", methods=["POST"])
+@login_required
+def upload_resource(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    member = StudyGroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if not member:
+        abort(403)
+    uploaded = request.files.get("file")
+    if not uploaded or not uploaded.filename:
+        flash("Choose a file.")
+        return redirect(url_for("group_detail", group_id=group.id))
+    if not allowed_file(uploaded.filename):
+        flash("Unsupported file type.")
+        return redirect(url_for("group_detail", group_id=group.id))
+    filename, path = save_upload(uploaded)
+    db.session.add(Resource(
+        group_id=group.id,
+        uploaded_by=current_user.id,
+        filename=filename,
+        filepath=str(path)
+    ))
+    db.session.commit()
+    flash("Resource uploaded.")
+    return redirect(url_for("group_detail", group_id=group.id))
+
+
+@app.route("/groups/<int:group_id>/session", methods=["POST"])
+@login_required
+def add_session(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    member = StudyGroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if not member:
+        abort(403)
+
+    try:
+        session_date = parse_date(request.form.get("session_date", ""), "Session date")
+        if session_date < date.today():
+            flash("Session date cannot be in the past.")
+            return redirect(url_for("group_detail", group_id=group.id))
+        start_time = request.form.get("start_time", "").strip()
+        end_time = request.form.get("end_time", "").strip()
+        start_dt = datetime.strptime(start_time, "%H:%M")
+        end_dt = datetime.strptime(end_time, "%H:%M")
+        if end_dt <= start_dt:
+            flash("End time must be after start time.")
+            return redirect(url_for("group_detail", group_id=group.id))
+    except ValueError as exc:
+        flash(str(exc))
+        return redirect(url_for("group_detail", group_id=group.id))
+
+    notes = clean_text(request.form.get("notes"))[:500]
+    db.session.add(JointSession(
+        group_id=group.id,
+        session_date=session_date,
+        start_time=start_time,
+        end_time=end_time,
+        notes=notes
+    ))
+    db.session.flush()
+
+    member_rows = StudyGroupMember.query.filter_by(group_id=group.id).all()
+    member_ids = [m.user_id for m in member_rows]
+    plans_to_block = StudyPlan.query.filter(
+        StudyPlan.user_id.in_(member_ids),
+        StudyPlan.module_id == group.module_id,
+    ).all()
+    for plan in plans_to_block:
+        note_text = f"Blocked for group session {start_time}-{end_time}"
+        already_blocked = StudyPlanItem.query.filter_by(
+            plan_id=plan.id,
+            target_date=session_date,
+            topic_id=None,
+            note=note_text
+        ).first()
+        if not already_blocked:
+            db.session.add(StudyPlanItem(
+                plan_id=plan.id,
+                topic_id=None,
+                target_date=session_date,
+                completed=False,
+                note=note_text
+            ))
+    for member_row in member_rows:
+        notify(member_row.user_id, "group", group.id, f"Joint session scheduled on {session_date.isoformat()}")
+    db.session.commit()
+    flash("Joint session created and blocked in shared plans.")
+    return redirect(url_for("group_detail", group_id=group.id))
+
+
+@app.route("/notifications/<int:notif_id>/read", methods=["POST"])
+@login_required
+def mark_notification(notif_id):
+    notif = Notification.query.get_or_404(notif_id)
+    if notif.user_id != current_user.id:
+        abort(403)
+    notif.is_read = True
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@app.route("/notifications/read-all", methods=["POST"])
+@login_required
+def mark_all_notifications():
+    Notification.query.filter_by(user_id=current_user.id, is_read=False).update({"is_read": True})
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@app.route("/uploads/<path:filename>")
+@login_required
+def download_upload(filename):
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=True)
+
+
+@app.route("/static/profile_pics/<path:filename>")
+@login_required
+def profile_pic(filename):
+    return send_from_directory(Path(app.static_folder) / "profile_pics", filename)
+
+
+@app.errorhandler(403)
+def forbidden(_):
+    return render_template("simple_message.html", title="Forbidden", message="You do not have access to this resource."), 403
+
+
+@app.errorhandler(404)
+def not_found(_):
+    return render_template("simple_message.html", title="Not Found", message="The page you requested was not found."), 404
+
+
+if __name__ == "__main__":
+    init_folders()
+    with app.app_context():
+        db.create_all()
+    try:
+        start_scheduler()
+    except Exception:
+        pass
+    app.run(debug=True)
