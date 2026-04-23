@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="auth-card wide">
+  <div class="eyebrow">Edit module</div>
+  <h1>{{ module.code }}</h1>
+  <form method="post" class="form-grid form-layout">
+    <div class="form-main">
+      <div class="form-fields two-col">
+        <label>Code<input type="text" name="code" value="{{ module.code }}" required maxlength="20"></label>
+        <label>Credits<input type="number" name="credits" min="0" max="60" value="{{ module.credits }}"></label>
+        <label class="span-2">Name<input type="text" name="name" value="{{ module.name }}" required maxlength="120"></label>
+      </div>
+    </div>
+
+    <aside class="form-rail">
+      <div class="form-banner">
+        <strong>Editing tip</strong>
+        <p>Keep the code short and the name descriptive so the module remains easy to scan everywhere in StudyDesk.</p>
+      </div>
+      <div class="help-card"><strong>What changes</strong><p>Renaming a module updates how it appears in assignments, planning, and group cards.</p></div>
+    </aside>
+
+    <div class="form-actions">
+      <button type="submit">Save changes</button>
+      <a class="button-link secondary" href="{{ url_for('modules') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
