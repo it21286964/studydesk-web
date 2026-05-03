@@ -45,11 +45,3 @@ python app.py
 ```
 
 The app uses a local SQLite database by default, so no database server is required.
-
-## AI setup
-
-StudySync reads `GEMINI_API_KEY` from `.env` through `python-dotenv`. The app uses the stable `gemini-2.5-flash` model when scoring topic difficulty.
-
-## Notes
-
-- Uploaded files are stored in `uploads/`.
