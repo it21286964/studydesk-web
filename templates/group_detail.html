@@ -5,6 +5,11 @@
     <div class="eyebrow">Study circle</div>
     <h1>{{ group.group_name }}</h1>
     <p>{{ group.module_code }} · Exam: {{ group.exam_start_date|dt }} → {{ group.exam_end_date|dt }} · Location preference: {{ group.location_pref or 'Not set' }}</p>
+    <div class="hero-actions">
+      <form method="post" action="{{ url_for('leave_group', group_id=group.id) }}">
+        <button type="submit" class="danger">Leave group</button>
+      </form>
+    </div>
   </div>
   <div class="stat-box"><strong>{{ members|length }}</strong><span>members</span></div>
 </section>
@@ -58,7 +63,7 @@
     <div class="stack">
       {% for r in resources %}
         <div class="mini-card">
-          <a href="{{ url_for('download_upload', filename=r.filepath.split('/')[-1]) }}">{{ r.filename }}</a>
+          <a href="{{ url_for('download_upload', filename=r.filename) }}">{{ r.filename }}</a>
           <div class="subtle">Uploaded by {{ r.uploader.name if r.uploader else 'member' }}</div>
         </div>
       {% else %}<p class="muted">No resources uploaded yet.</p>{% endfor %}
