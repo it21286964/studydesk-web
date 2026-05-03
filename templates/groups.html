@@ -24,7 +24,12 @@
           <div class="mini-card group-card">
             <strong>{{ g.group_name }}</strong>
             <p class="subtle">{{ g.module_code }} | {{ g.exam_start_date|dt }} → {{ g.exam_end_date|dt }}</p>
-            <a href="{{ url_for('group_detail', group_id=g.id) }}">Open group</a>
+            <div class="row">
+              <a href="{{ url_for('group_detail', group_id=g.id) }}">Open group</a>
+              <form method="post" action="{{ url_for('leave_group', group_id=g.id) }}">
+                <button type="submit" class="danger">Leave</button>
+              </form>
+            </div>
           </div>
         {% endfor %}
       </div>
