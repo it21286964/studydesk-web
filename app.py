@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, date, time, timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -420,9 +421,12 @@ def assignments():
             return redirect(url_for("assignments"))
 
         try:
-            deadline = parse_dt_local(deadline_raw, "Deadline")
             credit_weight = bound_int(request.form.get("credit_weight", 0), "Credit weight", 0, 100)
             priority_level = bound_int(request.form.get("priority_level", 1), "Priority level", 1, 10)
+            if typ != "exam":
+                deadline = parse_dt_local(deadline_raw, "Deadline")
+            else:
+                deadline = None
         except ValueError as exc:
             flash(str(exc))
             return redirect(url_for("assignments"))
@@ -441,7 +445,7 @@ def assignments():
             if exam_end_date < exam_start_date:
                 flash("Exam end date cannot be before the start date.")
                 return redirect(url_for("assignments"))
-            deadline = datetime.combine(exam_start_date, time(23, 59))
+            deadline = datetime.combine(exam_end_date, time(23, 59))
 
         assignment = Assignment(
             module_id=module.id,
@@ -495,7 +499,7 @@ def assignment_cycle(assignment_id):
     db.session.commit()
     return jsonify({"status": assignment.status, "class": status_class(assignment.status)})
 
-#Damitu
+
 @app.route("/planner", methods=["GET", "POST"])
 @login_required
 def planner():
@@ -668,7 +672,7 @@ def toggle_plan_item(item_id):
     db.session.commit()
     return jsonify({"completed": item.completed})
 
-#Yenura
+
 @app.route("/groups")
 @login_required
 def groups():
@@ -722,6 +726,20 @@ def join_group(group_id):
         db.session.commit()
     flash("Joined group.")
     return redirect(url_for("group_detail", group_id=group.id))
+
+
+@app.route("/groups/<int:group_id>/leave", methods=["POST"])
+@login_required
+def leave_group(group_id):
+    group = StudyGroup.query.get_or_404(group_id)
+    membership = StudyGroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if not membership:
+        flash("You are not a member of that group.")
+        return redirect(url_for("groups"))
+    db.session.delete(membership)
+    db.session.commit()
+    flash("You left the group.")
+    return redirect(url_for("groups"))
 
 
 @app.route("/groups/<int:group_id>/resource", methods=["POST"])
@@ -835,7 +853,8 @@ def mark_all_notifications():
 @app.route("/uploads/<path:filename>")
 @login_required
 def download_upload(filename):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=True)
+    safe_name = re.split(r"[\/]+", filename)[-1]
+    return send_from_directory(app.config["UPLOAD_FOLDER"], safe_name, as_attachment=True)
 
 
 @app.route("/static/profile_pics/<path:filename>")
