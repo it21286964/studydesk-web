@@ -85,12 +85,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const taskType = document.querySelector("#task-type");
   const examExtra = document.querySelector("#exam-extra");
+  const deadlineField = document.querySelector("#deadline-field");
+  const deadlineInput = deadlineField ? deadlineField.querySelector('input[name="deadline"]') : null;
   const syncExamVisibility = () => {
     if (!taskType || !examExtra) return;
-    examExtra.classList.toggle("show", taskType.value === "exam");
+    const isExam = taskType.value === "exam";
+    examExtra.classList.toggle("show", isExam);
     examExtra.querySelectorAll("input, select").forEach((el) => {
-      el.required = taskType.value === "exam";
+      el.required = isExam;
     });
+    if (deadlineField && deadlineInput) {
+      deadlineField.classList.toggle("hidden-section", isExam);
+      deadlineInput.required = !isExam;
+      deadlineInput.disabled = isExam;
+      if (isExam) deadlineInput.value = "";
+    }
   };
   if (taskType && examExtra) {
     taskType.addEventListener("change", syncExamVisibility);
